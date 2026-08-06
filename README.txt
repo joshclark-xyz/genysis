@@ -13,8 +13,9 @@ PAGES
 
 
 DEPLOYMENT
-  1. Upload the entire contents of this folder to the public web root for
-     genysisiq.com.
+  1. Upload the four HTML files, styles.css, script.js and the assets folder
+     to the public web root for genysisiq.com. (_source-originals/ is working
+     material only - it does not need to be uploaded.)
   2. Keep the assets folder beside the four HTML files.
   3. Make sure index.html is the site's default document.
   4. No database, WordPress, Node or build step is required.
@@ -53,17 +54,26 @@ PHOTOGRAPHY AND VIDEO
     boardroom.jpg              Ron and Josh with a client team (Home)
     server-room.jpg            Josh with an infrastructure team (About)
     band.jpg                   Wide, darkened band behind the closing CTA
+    office-chaos.jpg           "Office #1 - owner dependent" (Home)
+    office-structured.jpg      "Office #2 - systems driven" (Home)
     transformation.mp4         Cluttered office to organised office (Home)
     transformation-poster.jpg  First frame, shown while the video loads
     hero.mp4                   Hero background loop
     hero-poster.jpg            First frame of the hero loop
 
-  The original, ungraded source files are left in assets/ (scale-office.png,
-  tech-hub.png, founder-visual.png, office-transformation.mp4) so the grade can
-  be redone at any time. They are not loaded by any page.
+  The original, ungraded source files live in _source-originals/ so the grade
+  can be redone at any time. No page loads them, so that folder does not need
+  to be uploaded - skipping it keeps the deployed site under 4 MB.
+
+  office-chaos.jpg and office-structured.jpg are the two endpoints of
+  transformation.mp4 - the room the owner walks out of and the room he walks
+  into. If dedicated photographs of a cluttered office and an organised office
+  turn up later, drop them in under the same two filenames and nothing else
+  needs to change.
 
   To replace a photograph, drop the new file in and match the aspect ratio:
-  portraits are 900x780, feature images 1400x1050, the CTA band 1800x700.
+  portraits are 900x780, feature images 1400x1050, the two office images
+  1200x900, the CTA band 1800x700.
 
 
 CONTACT FORM
