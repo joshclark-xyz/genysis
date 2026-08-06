@@ -1,0 +1,87 @@
+GENYSIS IQ WEBSITE
+Scale Smarter. Grow Faster.
+
+
+PAGES
+  index.html      Home
+  services.html   Services
+  about.html      About Us
+  contact.html    Contact Us
+
+  styles.css      All styling (one file, organised by section)
+  script.js       All interaction (one file, no dependencies)
+
+
+DEPLOYMENT
+  1. Upload the entire contents of this folder to the public web root for
+     genysisiq.com.
+  2. Keep the assets folder beside the four HTML files.
+  3. Make sure index.html is the site's default document.
+  4. No database, WordPress, Node or build step is required.
+
+  The only external request the site makes is to Google Fonts, for the two
+  typefaces (Instrument Serif for headlines, Inter for everything else).
+  If the site ever needs to run fully offline, download those two families
+  into assets/fonts and swap the <link> in each page's <head> for an
+  @font-face block.
+
+
+BRAND ASSETS
+  assets/genysis-logo-h.png          Horizontal lockup, light — used in the header
+  assets/genysis-logo-h@2x.png       Retina version of the above
+  assets/genysis-logo-h-dark.png     Horizontal lockup for light backgrounds
+  assets/genysis-logo-light.png      Stacked lockup, light — used in the footer
+  assets/genysis-logo-light@2x.png   Retina version of the above
+  assets/genysis-logo.png            Stacked lockup, original colours, transparent
+                                     (for white/light backgrounds, print, email)
+  assets/mark.png                    The globe mark on its own
+  assets/favicon-32.png              Browser tab icon
+  assets/favicon-512.png             High-resolution icon
+  assets/apple-touch-icon.png        iOS home-screen icon
+
+  All of these were built from the supplied logo artwork with the white
+  background removed. The light versions invert the navy wordmark to near-white
+  so it reads on the site's black background; the globe keeps its own colour.
+
+
+PHOTOGRAPHY AND VIDEO
+  assets/img/  holds everything the site actually loads. Each photograph is
+  colour-graded to the same cool navy palette so the pages read as one set.
+
+    ron-clark.jpg              Ron Clark portrait (About)
+    josh-clark.jpg             Josh Clark portrait (About)
+    boardroom.jpg              Ron and Josh with a client team (Home)
+    server-room.jpg            Josh with an infrastructure team (About)
+    band.jpg                   Wide, darkened band behind the closing CTA
+    transformation.mp4         Cluttered office to organised office (Home)
+    transformation-poster.jpg  First frame, shown while the video loads
+    hero.mp4                   Hero background loop
+    hero-poster.jpg            First frame of the hero loop
+
+  The original, ungraded source files are left in assets/ (scale-office.png,
+  tech-hub.png, founder-visual.png, office-transformation.mp4) so the grade can
+  be redone at any time. They are not loaded by any page.
+
+  To replace a photograph, drop the new file in and match the aspect ratio:
+  portraits are 900x780, feature images 1400x1050, the CTA band 1800x700.
+
+
+CONTACT FORM
+  The form validates in the browser and then opens the visitor's email client
+  with a prepared message addressed to ron@genysisiq.com. This avoids needing a
+  server-side form handler. If you later want submissions to arrive without the
+  visitor's email client opening, point the <form> at a hosted form service and
+  remove the submit handler at the bottom of script.js.
+
+
+ACCESSIBILITY AND MOTION
+  Every page has a skip link, visible keyboard focus rings, labelled form
+  fields and a properly announced mobile menu. All animation is disabled
+  automatically for visitors who have "reduce motion" turned on, and every
+  scroll-triggered element still renders if JavaScript is unavailable.
+
+
+CONTACT
+  Phone:   689.444.6327
+  Email:   ron@genysisiq.com
+  Website: www.genysisiq.com
