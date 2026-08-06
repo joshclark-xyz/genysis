@@ -77,11 +77,36 @@ PHOTOGRAPHY AND VIDEO
 
 
 CONTACT FORM
-  The form validates in the browser and then opens the visitor's email client
-  with a prepared message addressed to ron@genysisiq.com. This avoids needing a
-  server-side form handler. If you later want submissions to arrive without the
-  visitor's email client opening, point the <form> at a hosted form service and
-  remove the submit handler at the bottom of script.js.
+  Submissions are emailed to info@genysisiq.com through FormSubmit
+  (formsubmit.co), a free relay that needs no account and no server code. The
+  visitor fills in the form, sees a confirmation on the page, and the message
+  arrives in the inbox.
+
+  ONE-TIME SETUP - the form will not deliver anything until this is done:
+    1. Put the site live.
+    2. Submit the form once yourself from the live site.
+    3. FormSubmit emails info@genysisiq.com asking to confirm the address.
+       Open it and click the activation link.
+    4. Submit once more to check it arrives. From then on it just works.
+
+  Optional, once activated: FormSubmit will give you a random endpoint such as
+  https://formsubmit.co/a1b2c3d4e5... that works the same way without putting
+  the address in the page source, which keeps it away from scrapers. To use it,
+  replace the address in two places - the form's action in contact.html and
+  ENDPOINT near the bottom of script.js.
+
+  Fallbacks, so a message is never simply lost:
+    - If the request fails, the page opens the visitor's email client with the
+      details already filled in.
+    - If JavaScript is off entirely, the form posts normally and FormSubmit
+      returns the visitor to contact.html?sent=1, which shows the same
+      confirmation.
+
+  To move to a different provider (Formspree, Web3Forms, Netlify Forms, a PHP
+  script on the host), change those same two lines. Everything else stays.
+
+  The form also carries a hidden honeypot field that silently discards bot
+  submissions.
 
 
 ACCESSIBILITY AND MOTION
@@ -93,5 +118,5 @@ ACCESSIBILITY AND MOTION
 
 CONTACT
   Phone:   689.444.6327
-  Email:   ron@genysisiq.com
+  Email:   info@genysisiq.com
   Website: www.genysisiq.com

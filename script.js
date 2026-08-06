@@ -206,10 +206,44 @@
 
   /* ------------------------------------------------------ contact form -- */
 
+  var INBOX = "info@genysisiq.com";
+  // Posting here delivers the submission to INBOX. To move to a different
+  // provider, change this one line and the form's action in contact.html.
+  var ENDPOINT = "https://formsubmit.co/ajax/" + INBOX;
+
   var form = $("#contactForm");
 
   if (form) {
     var status = $(".form-status", form);
+    var submitBtn = $("button[type=submit]", form);
+
+    function say(message, state) {
+      if (!status) return;
+      status.textContent = message;
+      status.className = "form-status is-visible" + (state ? " is-" + state : "");
+    }
+
+    function busy(on) {
+      if (!submitBtn) return;
+      submitBtn.disabled = on;
+      submitBtn.textContent = on ? "Sending…" : submitBtn.getAttribute("data-label");
+    }
+
+    function mailtoFallback(d) {
+      var subject = "Genysis IQ website inquiry — " +
+        (d.get("company") || d.get("name") || "Prospective client");
+      var body = [
+        "Name: " + (d.get("name") || ""),
+        "Company: " + (d.get("company") || ""),
+        "Email: " + (d.get("email") || ""),
+        "Phone: " + (d.get("phone") || ""),
+        "",
+        "What they need help with:",
+        d.get("message") || ""
+      ].join("\n");
+      window.location.href = "mailto:" + INBOX +
+        "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+    }
 
     form.addEventListener("input", function (e) {
       var field = e.target.closest(".field");
@@ -222,34 +256,47 @@
       var ok = true;
       $$("[required]", form).forEach(function (input) {
         var field = input.closest(".field");
-        var valid = input.value.trim() !== "" && (input.type !== "email" || /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(input.value));
+        var valid = input.value.trim() !== "" &&
+          (input.type !== "email" || /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(input.value));
         field.classList.toggle("is-invalid", !valid);
         if (!valid && ok) { input.focus(); ok = false; }
       });
 
-      if (!ok) return;
-
-      var d = new FormData(form);
-      var who = d.get("company") || d.get("name") || "Prospective Client";
-      var subject = "Genysis IQ Website Inquiry — " + who;
-      var body = [
-        "Name: " + (d.get("name") || ""),
-        "Company: " + (d.get("company") || ""),
-        "Email: " + (d.get("email") || ""),
-        "Phone: " + (d.get("phone") || ""),
-        "",
-        "What they need help with:",
-        d.get("message") || ""
-      ].join("\n");
-
-      if (status) {
-        status.textContent = "Opening your email application with this message ready to send. If nothing happens, email ron@genysisiq.com directly.";
-        status.classList.add("is-visible");
+      if (!ok) {
+        say("Please complete the highlighted fields.", "error");
+        return;
       }
 
-      window.location.href = "mailto:ron@genysisiq.com?subject=" +
-        encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+      var data = new FormData(form);
+      if (data.get("_honey")) return;            // bot
+
+      busy(true);
+      say("Sending your message…", null);
+
+      fetch(ENDPOINT, {
+        method: "POST",
+        body: data,
+        headers: { Accept: "application/json" }
+      })
+        .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
+        .then(function () {
+          form.reset();
+          busy(false);
+          say("Thank you — your message is on its way to " + INBOX +
+              ". We will get back to you shortly.", "success");
+        })
+        .catch(function () {
+          busy(false);
+          say("We could not send that automatically, so we are opening your email " +
+              "program instead. If nothing happens, write to " + INBOX + " directly.", "error");
+          mailtoFallback(data);
+        });
     });
+
+    // Visitors who arrive back from the no-JavaScript redirect.
+    if (/[?&]sent=1/.test(window.location.search)) {
+      say("Thank you — your message has been sent. We will get back to you shortly.", "success");
+    }
   }
 
   // Prime scroll-dependent state on load.
