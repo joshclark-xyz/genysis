@@ -45,6 +45,31 @@ BRAND ASSETS
   so it reads on the site's black background; the globe keeps its own colour.
 
 
+ORGANIZATION LOGOS
+  assets/logos/  holds the marks shown in "Organizations Supported by Genysis
+  IQ" at the bottom of the home page.
+
+    crema-west.jpg           Crema West - Business Networking & Coffee
+    lake-nona-chamber.jpg    Lake Nona Regional Chamber
+    east-orlando-chamber.jpg East Orlando Chamber of Commerce
+    nabln.jpg                North American Business Leaders Network
+    pr-red-network.jpg       PR R.E.D. Network
+    crema-at-nona.jpg        Crema at Nona
+    clg-groups.jpg           Connections Leads Groups
+    rotary.jpg               Rotary
+
+  Each one was cleaned up so its background is pure white, which lets it sit
+  invisibly on the white tile behind it. They are deliberately NOT recoloured -
+  each organisation keeps its own brand colours.
+
+  Each logo carries its own --logo-h value in index.html. That is the displayed
+  height, and it is set per logo rather than globally so a square mark and a
+  wide mark end up looking the same size to the eye. To add an organisation,
+  copy one of the .org blocks, drop the file in assets/logos, and pick a height
+  that looks balanced next to its neighbours - roughly 60px for a wide mark and
+  85px for a square one.
+
+
 PHOTOGRAPHY AND VIDEO
   assets/img/  holds everything the site actually loads. Each photograph is
   colour-graded to the same cool navy palette so the pages read as one set.
