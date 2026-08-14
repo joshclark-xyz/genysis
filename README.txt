@@ -56,7 +56,8 @@ ORGANIZATION LOGOS
     pr-red-network.jpg       PR R.E.D. Network
     crema-at-nona.jpg        Crema at Nona
     clg-groups.jpg           Connections Leads Groups
-    rotary.jpg               Rotary
+    rotary.jpg               Rotary Club of Lake Nona
+    village-connect.jpg      Village Connect
 
   Each one was cleaned up so its background is pure white, which lets it sit
   invisibly on the white tile behind it. They are deliberately NOT recoloured -

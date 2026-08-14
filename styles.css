@@ -1107,14 +1107,14 @@ ul.checklist { list-style: none; padding: 0; }
 
 .orgs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
 .org {
   display: grid;
   place-items: center;
-  min-height: 138px;
+  min-height: 158px;
   padding: 24px 22px;
   border-radius: var(--radius-lg);
   background: #fff;
@@ -1638,7 +1638,6 @@ ul.checklist { list-style: none; padding: 0; }
   .section-head { grid-template-columns: 1fr; align-items: start; }
   .cards { grid-template-columns: 1fr; }
   .compare { grid-template-columns: 1fr; }
-  .orgs { grid-template-columns: repeat(3, 1fr); }
   .feature { grid-template-columns: 1fr; }
   .feature--flip .feature-visual { order: 0; }
   .svc { grid-template-columns: 1fr; }
@@ -1668,7 +1667,7 @@ ul.checklist { list-style: none; padding: 0; }
   .stats > div:first-child { border-top: 0; }
   .casper { grid-template-columns: 1fr 1fr; }
   .orgs { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .org { min-height: 112px; padding: 18px 16px; }
+  .org { min-height: 140px; padding: 18px 14px; }
   .feature-visual img { min-height: 300px; }
   .svc-list { grid-template-columns: 1fr; }
   .form { grid-template-columns: 1fr; }
