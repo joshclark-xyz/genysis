@@ -146,3 +146,8 @@ CONTACT
   Phone:   689.444.6327
   Email:   info@genysisiq.com
   Website: www.genysisiq.com
+
+CREDITS
+  Built by Josh Clark, a 15-year-old certified Software Engineer, and the
+  Director of IT and Technology at Genysis IQ. Authorized by Ron Clark,
+  the CEO of Genysis IQ
