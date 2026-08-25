@@ -135,6 +135,20 @@ CONTACT FORM
   submissions.
 
 
+CLIENT DASHBOARD
+  login.html, dashboard.html and update-password.html are the company
+  registration and sign-in area, backed by Supabase. They are noindex and are
+  reached from the "Client Login" link in the site navigation.
+
+  Setup, testing steps and how to plug in the external AI API are documented
+  separately in DASHBOARD-SETUP.md. The short version: create a Supabase
+  project, run supabase/migrations/0001_companies.sql, then paste the project
+  URL and anon key into assets/js/supabase-config.js.
+
+  Until those keys are filled in the pages load and say so plainly rather than
+  breaking - nothing else on the public site is affected either way.
+
+
 ACCESSIBILITY AND MOTION
   Every page has a skip link, visible keyboard focus rings, labelled form
   fields and a properly announced mobile menu. All animation is disabled
@@ -146,8 +160,3 @@ CONTACT
   Phone:   689.444.6327
   Email:   info@genysisiq.com
   Website: www.genysisiq.com
-
-CREDITS
-  Built by Josh Clark, a 15-year-old certified Software Engineer, and the
-  Director of IT and Technology at Genysis IQ. Authorized by Ron Clark,
-  the CEO of Genysis IQ

@@ -59,6 +59,10 @@ html {
 
 body {
   margin: 0;
+  /* Several layouts here depend on column order, which follows writing
+     direction. Pinned so an extension flipping the page to RTL cannot
+     rearrange them. */
+  direction: ltr;
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);

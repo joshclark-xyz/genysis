@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard | Genysis IQ</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#04060c">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.10.0/styles/github-dark.min.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============================================================ side == -->
+  <aside class="app-side" id="appSide">
+    <a class="brand" href="index.html" aria-label="Genysis IQ — home">
+      <img src="assets/genysis-logo-h.png"
+           srcset="assets/genysis-logo-h.png 1x, assets/genysis-logo-h@2x.png 2x"
+           width="620" height="100" alt="Genysis IQ">
+    </a>
+
+    <p class="side-label">Dashboard</p>
+    <nav class="side-nav" aria-label="Dashboard">
+      <a href="#overview" data-view="overview" class="is-active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="8" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        Overview
+      </a>
+      <a href="#assistants" data-view="assistants">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+        AI assistants
+      </a>
+      <a href="#chats" data-view="chats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/></svg>
+        Conversations
+      </a>
+      <a href="#files" data-view="files">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h7A1.5 1.5 0 0 1 19 10v7.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 3 17.5z"/></svg>
+        File depot
+      </a>
+      <a href="#account" data-view="account">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21v-1a6 6 0 0 1 6-6h6a6 6 0 0 1 6 6v1"/><circle cx="12" cy="7" r="4"/></svg>
+        Account
+      </a>
+    </nav>
+
+    <nav class="side-nav" aria-label="Staff" id="adminNav" hidden>
+      <a href="admin.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 4 6v6c0 5 3.4 9 8 10 4.6-1 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+        Admin console
+      </a>
+    </nav>
+
+    <p class="side-label">Support</p>
+    <nav class="side-nav" aria-label="Support">
+      <a href="mailto:info@genysisiq.com">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        Contact Genysis IQ
+      </a>
+      <a href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Back to website
+      </a>
+    </nav>
+
+    <div class="side-foot">
+      <div class="side-user">
+        <span class="avatar" id="userAvatar" aria-hidden="true">—</span>
+        <div>
+          <b id="userCompany" class="skeleton">Company</b>
+          <span id="userEmail" class="skeleton">email</span>
+        </div>
+      </div>
+      <button class="side-signout" id="signOutBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Sign out
+      </button>
+    </div>
+  </aside>
+
+  <div class="app-scrim" id="appScrim"></div>
+
+  <!-- ============================================================ main == -->
+  <div class="app-main">
+    <header class="app-top">
+      <div style="display:flex;align-items:center;gap:14px;min-width:0">
+        <button class="app-burger" id="appBurger" type="button" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <div style="min-width:0">
+          <h1 id="viewTitle">Overview</h1>
+          <p id="viewSub">Your Genysis IQ account at a glance.</p>
+        </div>
+      </div>
+      <span class="badge" id="statusBadge">Loading</span>
+    </header>
+
+    <main class="app-content">
+
+      <!-- verification / provisioning banners -->
+      <div class="alert alert--warn" id="verifyBanner" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        <span>
+          <strong>Verify your email address</strong>
+          We sent a link to <span id="verifyEmail"></span>. Confirm it to secure your account.
+          <button type="button" class="linklike" id="verifyResend">Resend the email</button>.
+        </span>
+      </div>
+
+      <!-- ------------------------------------------------------ overview -- -->
+      <section data-panel="overview">
+        <div class="card-grid" style="margin-bottom:22px">
+          <div class="tile">
+            <span class="tile-label">Account status</span>
+            <span class="tile-value" id="tileStatus">—</span>
+            <p class="tile-note" id="tileStatusNote">Checking your account…</p>
+          </div>
+          <div class="tile">
+            <span class="tile-label">AI assistants</span>
+            <span class="tile-value" id="tileAssistants">—</span>
+            <p class="tile-note" id="tileAssistantsNote">Assigned to your company</p>
+          </div>
+          <div class="tile">
+            <span class="tile-label">Member since</span>
+            <span class="tile-value" id="tileSince">—</span>
+            <p class="tile-note">Registered with Genysis IQ</p>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <header>
+            <div>
+              <h2>Company details</h2>
+              <p>What Genysis IQ has on file for your account.</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" data-view-link="account">Edit details</button>
+          </header>
+          <div class="panel-body">
+            <dl class="data-list">
+              <div><dt>Company</dt><dd id="ovCompany" class="skeleton">—</dd></div>
+              <div><dt>Primary contact</dt><dd id="ovContact" class="skeleton">—</dd></div>
+              <div><dt>Email</dt><dd id="ovEmail" class="skeleton">—</dd></div>
+              <div><dt>Phone</dt><dd id="ovPhone" class="skeleton">—</dd></div>
+              <div><dt>Industry</dt><dd id="ovIndustry" class="skeleton">—</dd></div>
+              <div><dt>Website</dt><dd id="ovWebsite" class="skeleton">—</dd></div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------------------------------------------- assistants -- -->
+      <section data-panel="assistants" hidden>
+        <!-- Shown when the assistant is not provisioned or not configured. -->
+        <div class="panel-block" id="chatUnavailable" hidden>
+          <div class="panel-body" id="chatUnavailableBody"></div>
+        </div>
+
+        <div class="chat" id="chatShell" hidden>
+          <div class="chat-list">
+            <header>
+              <button class="chat-new" type="button" id="chatNew">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                New conversation
+              </button>
+              <button class="chat-clear" type="button" id="chatClearAll" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>
+                Delete all conversations
+              </button>
+            </header>
+            <div class="chat-threads" id="chatThreads" role="list"></div>
+          </div>
+
+          <div class="chat-main">
+            <div class="chat-toolbar" id="chatToolbar" hidden>
+              <span class="chat-toolbar-title" id="chatToolbarTitle"></span>
+              <span class="chat-toolbar-actions">
+                <button class="chip-btn" type="button" id="copyThread">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                  Copy transcript
+                </button>
+                <button class="chip-btn chip-danger" type="button" id="deleteThread">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>
+                  Delete
+                </button>
+              </span>
+            </div>
+
+            <div class="chat-log" id="chatLog" aria-live="polite" aria-label="Conversation"></div>
+
+            <div class="chat-composer">
+              <form class="composer-box" id="chatForm">
+                <label class="sr-only" for="chatInput">Message your assistant</label>
+                <textarea id="chatInput" rows="1" placeholder="Ask your assistant anything…" autocomplete="off"></textarea>
+                <button class="composer-send" type="submit" id="chatSend" aria-label="Send message" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </button>
+              </form>
+              <p class="composer-note">
+                <span>Enter to send, Shift + Enter for a new line.</span>
+                <span id="chatModelNote"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- --------------------------------------------------------- chats -- -->
+      <section data-panel="chats" hidden>
+        <div class="panel-block">
+          <header>
+            <div>
+              <h2>Conversations</h2>
+              <p>Chats your team has had with your assistants.</p>
+            </div>
+          </header>
+          <div class="panel-body" id="chatsBody">
+            <div class="empty">
+              <span class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/></svg>
+              </span>
+              <h3>Loading…</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- --------------------------------------------------------- files -- -->
+      <section data-panel="files" hidden>
+        <div class="panel-block" id="filesUnavailable" hidden>
+          <div class="panel-body" id="filesUnavailableBody"></div>
+        </div>
+
+        <div id="filesShell" hidden>
+          <div class="dropzone" id="dropzone" tabindex="0" role="button"
+               aria-label="Upload files. Choose files or drop them here.">
+            <input type="file" id="fileInput" multiple hidden>
+            <span class="dropzone-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M3 15v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/></svg>
+            </span>
+            <b>Drop files here, or <span class="dz-link">browse</span></b>
+            <span class="dz-note" id="dzNote">Up to 50 MB each. Only your company can see them.</span>
+          </div>
+
+          <div class="upload-queue" id="uploadQueue" hidden></div>
+
+          <div class="panel-block" style="margin-top:22px">
+            <header>
+              <div>
+                <h2>Your files</h2>
+                <p id="filesCount">Stored on the Genysis IQ servers.</p>
+              </div>
+              <input id="fileSearch" placeholder="Search files"
+                     style="padding:10px 14px;border-radius:4px;border:1px solid var(--line-2);background:rgba(255,255,255,.02);color:var(--text);font:inherit;font-size:14px;min-width:200px">
+            </header>
+            <div class="panel-body" id="filesList">
+              <p class="muted-note">Loading…</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------- account -- -->
+      <section data-panel="account" hidden>
+        <div class="panel-block" style="margin-bottom:22px">
+          <header>
+            <div>
+              <h2>Company profile</h2>
+              <p>Keep this current so we can reach the right person.</p>
+            </div>
+          </header>
+          <div class="panel-body">
+            <div class="alert" id="profileAlert" hidden role="status"></div>
+            <form class="stack" id="profileForm" novalidate style="margin-top:4px">
+              <div class="row-2">
+                <div class="field">
+                  <label for="acCompany">Company name</label>
+                  <input id="acCompany" name="company_name" required>
+                  <span class="field-error">Please enter your company name.</span>
+                </div>
+                <div class="field">
+                  <label for="acContact">Primary contact</label>
+                  <input id="acContact" name="contact_name">
+                </div>
+              </div>
+              <div class="row-2">
+                <div class="field">
+                  <label for="acPhone">Phone</label>
+                  <input id="acPhone" name="phone" type="tel">
+                </div>
+                <div class="field">
+                  <label for="acIndustry">Industry</label>
+                  <input id="acIndustry" name="industry" placeholder="e.g. Manufacturing">
+                </div>
+              </div>
+              <div class="field">
+                <label for="acWebsite">Website</label>
+                <input id="acWebsite" name="website" type="url" placeholder="https://">
+              </div>
+              <div class="inline-actions">
+                <button class="btn btn-primary" type="submit" data-label="Save changes">Save changes</button>
+                <p class="muted-note" id="profileSaved"></p>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel-block" style="margin-bottom:22px">
+          <header>
+            <div>
+              <h2>Password</h2>
+              <p>Set a new password for this account.</p>
+            </div>
+          </header>
+          <div class="panel-body">
+            <div class="alert" id="passwordAlert" hidden role="status"></div>
+            <form class="stack" id="passwordForm" novalidate style="margin-top:4px;max-width:460px">
+              <div class="field">
+                <label for="acPassword">New password</label>
+                <span class="pw-wrap">
+                  <input id="acPassword" type="password" autocomplete="new-password" required placeholder="At least 8 characters">
+                  <button class="pw-toggle" type="button" data-toggle="acPassword">Show</button>
+                </span>
+                <span class="field-error">Please choose a password of at least 8 characters.</span>
+              </div>
+              <div class="field">
+                <label for="acPassword2">Confirm new password</label>
+                <span class="pw-wrap">
+                  <input id="acPassword2" type="password" autocomplete="new-password" required>
+                  <button class="pw-toggle" type="button" data-toggle="acPassword2">Show</button>
+                </span>
+                <span class="field-error">The two passwords do not match.</span>
+              </div>
+              <div class="inline-actions">
+                <button class="btn btn-ghost" type="submit" data-label="Update password">Update password</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel-block" style="margin-bottom:22px">
+          <header>
+            <div>
+              <h2>Security</h2>
+              <p>How this account behaves on shared or unattended machines.</p>
+            </div>
+          </header>
+          <div class="panel-body">
+            <div class="setting">
+              <div class="setting-copy">
+                <b>Sign out when I close the browser</b>
+                <span>Your session ends the moment this tab or the browser closes, or the
+                      computer shuts down. Refreshing the page keeps you signed in.</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="setEndOnClose">
+                <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+                <span class="sr-only">Sign out when I close the browser</span>
+              </label>
+            </div>
+
+            <div class="setting">
+              <div class="setting-copy">
+                <b>Automatic sign out when idle</b>
+                <span>You are signed out after <b id="idleMins">6</b> minutes without activity,
+                      with a warning first. Always on.</span>
+              </div>
+              <span class="badge badge--ok">Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <header>
+            <div>
+              <h2>Sign out everywhere</h2>
+              <p>Ends this session on every device.</p>
+            </div>
+            <button class="btn btn-ghost btn-sm btn-danger" type="button" id="signOutAll">Sign out</button>
+          </header>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/session.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.10.0/highlight.min.js"></script>
+<script src="assets/js/markdown.js"></script>
+<script src="assets/js/ai.js"></script>
+<script src="assets/js/files.js"></script>
+<script src="assets/js/dashboard.js"></script>
+</body>
+</html>
