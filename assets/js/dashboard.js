@@ -624,6 +624,17 @@
               body.classList.add("md", "is-streaming");
             }
             paint(full);
+          },
+          {
+            /* The account's token budget is shared, so a busy moment can bounce
+               one request. Say so rather than letting it look broken. */
+            onRetry: function (attempt, delay) {
+              var note = typing && typing.querySelector(".msg-text");
+              if (!note) return;
+              note.classList.remove("msg-typing");
+              note.innerHTML = '<span class="msg-busy">Busy right now — retrying' +
+                (attempt > 1 ? " (" + attempt + ")" : "") + "…</span>";
+            }
           }
         ).then(function (reply) {
           if (!bubble) {                       // nothing streamed - show it now
@@ -656,9 +667,17 @@
         if (typing && typing.parentNode) typing.remove();
         appendMessage("assistant", err.message ||
           "Something went wrong reaching the assistant. Please try again.", { error: true });
+
         // Roll back so a failed turn is not replayed as context.
         if (chat.messages.length && chat.messages[chat.messages.length - 1].role === "user") {
           chat.messages.pop();
+        }
+
+        // Hand the message back rather than making them retype it.
+        if (!chatInput.value.trim()) {
+          chatInput.value = text;
+          chatInput.style.height = "auto";
+          chatInput.style.height = Math.min(chatInput.scrollHeight, 168) + "px";
         }
       })
       .then(function () {
@@ -770,8 +789,45 @@
       (FILE_ICON[kind] || FILE_ICON.file) + "</svg>";
   }
 
+  /* The upload terms have to be accepted once per account before the depot
+     opens. Recorded on the company row so it follows them between devices. */
+  var TERMS_LOCAL_KEY = "genysis.filesTerms";
+
+  function termsAccepted() {
+    if (state.company && state.company.files_terms_accepted_at) return true;
+    // Fallback for projects that have not run migration 0004 yet.
+    try {
+      return localStorage.getItem(TERMS_LOCAL_KEY + "." + state.user.id) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function recordAcceptance() {
+    var stamp = new Date().toISOString();
+    try { localStorage.setItem(TERMS_LOCAL_KEY + "." + state.user.id, "1"); } catch (e) {}
+    if (state.company) state.company.files_terms_accepted_at = stamp;
+
+    return Auth.client()
+      .from("companies")
+      .update({ files_terms_accepted_at: stamp })
+      .eq("id", state.user.id)
+      .then(function (res) {
+        // A missing column just means migration 0004 has not run; the local
+        // fallback still holds, so this must not block the client.
+        if (res.error) console.warn("Could not store terms acceptance:", res.error.message);
+      })
+      .catch(function (err) { console.warn("Could not store terms acceptance:", err); });
+  }
+
   function loadFiles() {
     if (loaded.files) return;
+
+    if (!termsAccepted()) {
+      showTerms();
+      return;                       // loaded stays false so we run again after
+    }
+
     loaded.files = true;
 
     if (!Files.isConfigured()) {
@@ -1025,6 +1081,420 @@
       });
   });
 
+  /* --------------------------------- editing the assistant afterwards --- */
+
+  function wireAssistantPanel() {
+    var panel = $("#assistantPanel");
+    if (!panel) return;
+
+    var c = state.company || {};
+    // Only companies Genysis IQ granted self-serve can edit this; for everyone
+    // else the database would reject the write anyway.
+    panel.hidden = !c.can_self_serve_gpt;
+    if (panel.hidden) return;
+
+    $("#acAssistantName").value = c.assistant_name || "";
+    $("#acAssistantPrompt").value = c.system_prompt || "";
+
+    var form = $("#assistantForm");
+    var alertEl = $("#assistantAlert");
+
+    form.addEventListener("input", function (e) {
+      var f = e.target.closest(".field");
+      if (f) f.classList.remove("is-invalid");
+    });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      alertEl.hidden = true;
+
+      var name = $("#acAssistantName");
+      var prompt = $("#acAssistantPrompt");
+      var ok = true;
+      if (!name.value.trim()) { name.closest(".field").classList.add("is-invalid"); ok = false; }
+      if (prompt.value.trim().length < 40) { prompt.closest(".field").classList.add("is-invalid"); ok = false; }
+      if (!ok) return;
+
+      var btn = form.querySelector("button[type=submit]");
+      busy(btn, true);
+
+      Auth.updateCompany(state.user.id, {
+        assistant_name: name.value.trim(),
+        system_prompt: prompt.value.trim()
+      })
+        .then(function (res) {
+          if (res.error) throw res.error;
+          state.company.assistant_name = name.value.trim();
+          state.company.system_prompt = prompt.value.trim();
+          busy(btn, false);
+          loaded.assistants = false;        // pick up the new prompt next visit
+          render();
+          alertIn(alertEl, "ok", "Saved. ", "Your next message uses the updated instructions.");
+        })
+        .catch(function (err) {
+          busy(btn, false);
+          alertIn(alertEl, "err", "Could not save. ", esc(Auth.humanize(err)));
+        });
+    });
+
+    $("#assistantPreview").addEventListener("click", function () {
+      var btn = this;
+      var prompt = $("#acAssistantPrompt").value.trim();
+      if (prompt.length < 40) {
+        alertIn(alertEl, "err", "Add more detail first. ", "A couple of sentences at least.");
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "Asking…";
+      alertIn(alertEl, "warn", "", "Asking your assistant to introduce itself…");
+
+      window.GenysisChat.send(
+        { system_prompt: prompt, ai_model: c.ai_model, ai_api_key: c.ai_api_key },
+        [], "Briefly introduce yourself and what you can help with."
+      )
+        .then(function (reply) {
+          alertIn(alertEl, "ok", esc($("#acAssistantName").value.trim() || "It") + " would say: ",
+            '<span class="gpt-preview">' + esc(reply.content) + "</span>");
+        })
+        .catch(function (err) {
+          alertIn(alertEl, "err", "Could not reach the assistant. ", esc(err.message || err));
+        })
+        .then(function () {
+          btn.disabled = false;
+          btn.textContent = "Preview";
+        });
+    });
+  }
+
+  /* ================================================ build your assistant = */
+
+  var TONE = {
+    direct:  "Be direct and practical. No filler, no preamble. Lead with the answer.",
+    warm:    "Be warm and helpful. Explain your reasoning in plain language.",
+    formal:  "Be formal and precise. Use complete sentences and exact terminology.",
+    concise: "Answer as briefly as possible. A sentence or two unless more is clearly needed."
+  };
+
+  var gptAdvanced = false;
+
+  /** Turns the guided answers into a system prompt. */
+  function composePrompt() {
+    var name = ($("#gName").value || "").trim() || "the assistant";
+    var does = ($("#gDoes").value || "").trim();
+    var serves = ($("#gServes").value || "").trim();
+    var helps = ($("#gHelps").value || "").trim();
+    var tone = TONE[$("#gTone").value] || TONE.direct;
+    var company = (state.company && state.company.company_name) || "this company";
+
+    var out = ["You are " + name + ", the assistant for " + company + "."];
+
+    if (does) out.push("", "ABOUT THE BUSINESS", does);
+    if (serves) out.push("", "WHO THEY SERVE", serves);
+
+    if (helps) {
+      out.push("", "WHAT YOU HELP WITH");
+      helps.split(/\n+/).forEach(function (line) {
+        var t = line.trim().replace(/^[-*\u2022]\s*/, "");
+        if (t) out.push("- " + t);
+      });
+    }
+
+    out.push("", "HOW TO ANSWER", "- " + tone,
+      "- Use the company's own terminology.",
+      "- If you do not know something specific to this business, say so plainly and " +
+        "suggest who internally would know.",
+      "- Never invent figures, policies, prices or commitments.");
+
+    return out.join("\n");
+  }
+
+  function currentPrompt() {
+    return gptAdvanced ? ($("#gPromptRaw").value || "").trim() : composePrompt();
+  }
+
+  function showGptWizard() {
+    var shade = $("#gptShade");
+    shade.hidden = false;
+    document.body.classList.add("is-locked");
+
+    $("#gName").value = (state.company && state.company.assistant_name) || "";
+    $("#gptAlert").hidden = true;
+    $("#gptSpinner").hidden = true;
+    $("#gptCreate").hidden = false;
+    $("#gptTest").hidden = false;
+    $("#gName").focus({ preventScroll: true });
+
+    $("#gptAdvancedToggle").onclick = function () {
+      gptAdvanced = true;
+      $("#gPromptRaw").value = composePrompt();   // carry the answers across
+      $('[data-step="1"]').hidden = true;
+      $('[data-step="advanced"]').hidden = false;
+      $("#gPromptRaw").focus();
+    };
+    $("#gptSimpleToggle").onclick = function () {
+      gptAdvanced = false;
+      $('[data-step="advanced"]').hidden = true;
+      $('[data-step="1"]').hidden = false;
+    };
+
+    $("#gptTest").onclick = previewAssistant;
+    $("#gptCreate").onclick = createAssistant;
+  }
+
+  function closeGptWizard() {
+    $("#gptShade").hidden = true;
+    document.body.classList.remove("is-locked");
+  }
+
+  function gptSay(kind, title, body) {
+    var el = $("#gptAlert");
+    el.className = "alert alert--" + kind;
+    el.innerHTML = (title ? "<strong>" + title + "</strong>" : "") + body;
+    el.hidden = false;
+  }
+
+  function validateGpt() {
+    var name = ($("#gName").value || "").trim();
+    if (!name) {
+      gptSay("err", "Give it a name. ", "Something your team will recognise.");
+      $("#gName").focus();
+      return null;
+    }
+    var prompt = currentPrompt();
+    if (gptAdvanced && prompt.length < 40) {
+      gptSay("err", "Add more detail. ",
+        "Write at least a couple of sentences describing how it should behave.");
+      $("#gPromptRaw").focus();
+      return null;
+    }
+    if (!gptAdvanced && !($("#gDoes").value || "").trim() && !($("#gHelps").value || "").trim()) {
+      gptSay("err", "Tell it a little about the business. ",
+        "Fill in what your company does, or what you want the assistant to help with.");
+      $("#gDoes").focus();
+      return null;
+    }
+    return { name: name, prompt: prompt };
+  }
+
+  /** Runs the draft against the live model so they can hear it before saving. */
+  function previewAssistant() {
+    var draft = validateGpt();
+    if (!draft) return;
+
+    var btn = $("#gptTest");
+    btn.disabled = true;
+    btn.textContent = "Asking…";
+    gptSay("warn", "", "Asking your assistant to introduce itself…");
+
+    window.GenysisChat.send(
+      {
+        system_prompt: draft.prompt,
+        ai_model: (state.company && state.company.ai_model) || "openai/gpt-oss-120b",
+        ai_api_key: state.company && state.company.ai_api_key
+      },
+      [],
+      "Briefly introduce yourself and what you can help with."
+    )
+      .then(function (reply) {
+        gptSay("ok", esc(draft.name) + " would say: ",
+          "<span class=\"gpt-preview\">" + esc(reply.content) + "</span>");
+      })
+      .catch(function (err) {
+        gptSay("err", "Could not reach the assistant. ", esc(err.message || err));
+      })
+      .then(function () {
+        btn.disabled = false;
+        btn.textContent = "Preview";
+      });
+  }
+
+  function createAssistant() {
+    var draft = validateGpt();
+    if (!draft) return;
+
+    $("#gptCreate").hidden = true;
+    $("#gptTest").hidden = true;
+    $("#gptHint").textContent = "";
+    $("#gptAlert").hidden = true;
+
+    var spinner = $("#gptSpinner");
+    var ring = spinner.querySelector(".ring-fill");
+    spinner.hidden = false;
+
+    var saveFailed = null;
+    Auth.client()
+      .from("companies")
+      .update({ assistant_name: draft.name, system_prompt: draft.prompt })
+      .eq("id", state.user.id)
+      .select()
+      .maybeSingle()
+      .then(function (res) {
+        if (res.error) throw res.error;
+        state.company.assistant_name = draft.name;
+        state.company.system_prompt = draft.prompt;
+      })
+      .catch(function (err) { saveFailed = err; });
+
+    // Same wall-clock approach as the terms gate: rAF stalls in a background
+    // tab, so drive the ring on a timer and guarantee completion.
+    var started = Date.now();
+    var settled = false;
+
+    function finish() {
+      if (settled) return;
+      settled = true;
+      clearInterval(timer);
+      ring.style.strokeDashoffset = "0";
+
+      if (saveFailed) {
+        spinner.hidden = true;
+        $("#gptCreate").hidden = false;
+        $("#gptTest").hidden = false;
+        gptSay("err", "Could not save your assistant. ",
+          esc(saveFailed.message || saveFailed) +
+          " Your answers are still here — try again.");
+        return;
+      }
+
+      $("#gptSpinnerLabel").textContent = "Ready";
+      setTimeout(function () {
+        closeGptWizard();
+        loaded.assistants = false;      // rebuild the chat with the new prompt
+        render();
+        location.hash = "#assistants";
+        setView("assistants");
+      }, 500);
+    }
+
+    var timer = setInterval(function () {
+      var t = Math.min((Date.now() - started) / SETUP_MS, 1);
+      ring.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - t));
+      if (t >= 1) finish();
+    }, 60);
+    setTimeout(finish, SETUP_MS + 150);
+  }
+
+  /** Approved, allowed to self-serve, and nothing written yet. */
+  function needsGptSetup() {
+    var c = state.company;
+    return !!(c && c.can_self_serve_gpt && c.status === "active" &&
+      (!c.system_prompt || !String(c.system_prompt).trim()));
+  }
+
+  /* ------------------------------------------------------ the terms gate -- */
+
+  var RING_CIRCUMFERENCE = 125.6;   // 2 * PI * r, r = 20 in the SVG
+  var SETUP_MS = 3200;              // how long the ring takes to fill
+
+  function showTerms() {
+    var shade = $("#termsShade");
+    var body = $("#termsBody");
+    var accept = $("#termsAccept");
+    var hint = $("#termsHint");
+    var bar = $("#termsProgress").firstElementChild;
+
+    shade.hidden = false;
+    document.body.classList.add("is-locked");
+
+    // Reset, in case they backed out and came in again.
+    accept.hidden = false;
+    accept.disabled = true;
+    accept.textContent = accept.getAttribute("data-label");
+    $("#termsSpinner").hidden = true;
+    $("#termsDecline").hidden = false;
+    hint.textContent = "Scroll to the end to continue.";
+    hint.classList.remove("is-ready");
+    bar.style.width = "0%";
+    body.scrollTop = 0;
+
+    var unlocked = false;
+
+    function onScroll() {
+      var max = body.scrollHeight - body.clientHeight;
+      var pct = max <= 0 ? 100 : Math.min(100, (body.scrollTop / max) * 100);
+      bar.style.width = pct.toFixed(1) + "%";
+
+      // 4px of slack - some browsers land a fraction short of the bottom.
+      if (!unlocked && (max <= 0 || body.scrollTop >= max - 4)) {
+        unlocked = true;
+        accept.disabled = false;
+        hint.textContent = "Thank you for reading. You can continue.";
+        hint.classList.add("is-ready");
+      }
+    }
+
+    body.addEventListener("scroll", onScroll);
+    // Short viewports may show it all at once - never trap them.
+    requestAnimationFrame(onScroll);
+
+    $("#termsDecline").onclick = function () {
+      closeTerms();
+      location.hash = "#overview";
+    };
+
+    accept.onclick = function () {
+      if (accept.disabled) return;
+      runSetup();
+    };
+
+    body.focus({ preventScroll: true });
+
+    // A required gate: Escape and background clicks must not dismiss it.
+    shade.onclick = function (e) { if (e.target === shade) body.focus({ preventScroll: true }); };
+  }
+
+  /** Swaps the button for the blue ring, fills it, then opens the depot. */
+  function runSetup() {
+    var accept = $("#termsAccept");
+    var spinner = $("#termsSpinner");
+    var ring = spinner.querySelector(".ring-fill");
+    var label = $("#termsSpinnerLabel");
+
+    accept.hidden = true;
+    $("#termsDecline").hidden = true;
+    $("#termsHint").textContent = "";
+    spinner.hidden = false;
+
+    recordAcceptance();
+
+    var started = Date.now();
+    var settled = false;
+
+    function paint() {
+      var t = Math.min((Date.now() - started) / SETUP_MS, 1);
+      ring.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - t));
+      if (t > 0.55 && !settled) label.textContent = "Almost ready…";
+      return t;
+    }
+
+    function finish() {
+      if (settled) return;        // whichever timer wins, only run once
+      settled = true;
+      clearInterval(timer);
+      ring.style.strokeDashoffset = "0";
+      label.textContent = "Ready";
+      setTimeout(function () {
+        closeTerms();
+        loadFiles();              // acceptance is recorded, so this opens it
+      }, 420);
+    }
+
+    /* requestAnimationFrame is paused entirely in a background tab, which would
+       strand someone on the spinner if they switched away mid-wait. An interval
+       keeps ticking (throttled, but it fires), and the timeout below guarantees
+       the flow completes on wall-clock time either way. */
+    var timer = setInterval(function () {
+      if (paint() >= 1) finish();
+    }, 60);
+
+    setTimeout(finish, SETUP_MS + 150);
+  }
+
+  function closeTerms() {
+    $("#termsShade").hidden = true;
+    document.body.classList.remove("is-locked");
+  }
+
   /* ==================================================== session security = */
 
   function wireSecurity() {
@@ -1106,7 +1576,9 @@
       if (!state.user) return;
       render();
       wireSecurity();
+      wireAssistantPanel();
       setView((location.hash || "#overview").slice(1));
+      if (needsGptSetup()) showGptWizard();
     })
     .catch(function (err) {
       if (!state.user) return;

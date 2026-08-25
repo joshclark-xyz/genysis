@@ -22,6 +22,8 @@ plain HTML, CSS and JavaScript. No build step, no framework, no npm.
 | `supabase/migrations/0001_companies.sql` | Companies table, RLS, signup trigger |
 | `supabase/migrations/0002_ai_chat.sql` | Assistant config, conversations, messages |
 | `supabase/migrations/0003_admin.sql` | Admin flag, staff RLS, admin view |
+| `supabase/migrations/0004_file_terms.sql` | Records file depot terms acceptance |
+| `supabase/migrations/0005_self_serve_gpt.sql` | Lets a company build its own assistant |
 | `admin.html` | Staff console: approve companies, build their GPT |
 | `assets/js/ai.js` | The chat client (streaming + non-streaming) |
 | `assets/js/markdown.js` | Renders assistant replies as sanitized markdown |
@@ -50,6 +52,8 @@ Supabase dashboard → **SQL Editor**. Run both files in order:
 1. `supabase/migrations/0001_companies.sql`
 2. `supabase/migrations/0002_ai_chat.sql`
 3. `supabase/migrations/0003_admin.sql`
+4. `supabase/migrations/0004_file_terms.sql`
+5. `supabase/migrations/0005_self_serve_gpt.sql`
 
 It is safe to re-run. It creates:
 
@@ -172,6 +176,40 @@ noreferrer nofollow"` and only http, https, mailto and tel URLs survive.
 The endpoint also streams `delta.reasoning` — the model thinking out loud. That
 is deliberately discarded and never shown to clients.
 
+### When people see "too many requests" (429)
+
+The AI provider enforces a **tokens-per-minute budget shared by every client on
+the account** — not one budget each. On the free `on_demand` tier that is
+**8,000 TPM**. One person testing alone never comes close; several people
+chatting at once exhaust it in seconds, and whoever's request lands next is
+refused. That is why it looks random and never happens to you.
+
+The dashboard now absorbs most of this automatically:
+
+- A refused request is **retried up to four times**, reading the provider's own
+  hint (*"Please try again in 750ms"*) and waiting exactly that long.
+- Waits use **jitter**, so several clients bounced at the same moment do not all
+  retry in lockstep and collide again.
+- While retrying the reply area says **"Busy right now — retrying…"** rather
+  than showing a failure.
+- If it still cannot get through, the person's **message is put back in the box**
+  instead of being lost.
+
+Measured under 20 concurrent requests: **13/20 succeeded without retry, 16/20
+with it.** Retry smooths contention — it cannot create quota. If 429s are
+regular rather than occasional, one of these is the actual fix:
+
+1. **Raise the provider limit.** The 429 body links straight to the upgrade
+   page. This is the real answer and the only one that scales with your client
+   count.
+2. **Lower `AI_MAX_TOKENS`** in `assets/js/supabase-config.js`. At 8,000 TPM a
+   1024-token cap allows roughly eight full-length replies per minute across
+   *all* clients. Dropping to 500–700 nearly doubles how many conversations
+   fit, at the cost of truncating long answers.
+3. **Give busy companies their own key** via `ai_api_key`, if your provider
+   issues keys with separate quotas. A company on its own key cannot be starved
+   by anyone else's traffic.
+
 ### Managing conversations
 
 - **Delete one** — hover a conversation in the sidebar and click the bin, or use
@@ -254,6 +292,42 @@ RLS policies enforce it at the database, not just in the interface.
 A company needs **both** `status = 'active'` **and** a system prompt before the
 chat appears for them. Either one missing and they see a "being set up" or
 "almost ready" message instead of a broken chat.
+
+### Letting a company build its own assistant
+
+In the company editor there is a switch: **Let this company build their own**.
+
+Turn it on and leave the system prompt empty. The next time that company signs
+in — once they are `active` — they are shown a wizard they cannot dismiss,
+asking what the company does, who it serves, what the assistant should help
+with, and what tone to use. Those answers are assembled into a system prompt.
+There is a **Preview** button that runs the draft against the live model so they
+can hear it before committing, and an option to write the instructions by hand
+instead.
+
+They always use the default `openai/gpt-oss-120b`; the model is not theirs to
+change.
+
+The wizard fires only when **all three** are true — approved, self-serve
+enabled, and no prompt yet:
+
+| Company state | What happens |
+|---|---|
+| Self-serve on, active, no prompt | Wizard opens, cannot be skipped |
+| Self-serve off, no prompt | Nothing; they wait for you to write it |
+| Self-serve on, prompt exists | Nothing; already built |
+| Self-serve on, still pending | Nothing until you approve them |
+
+Afterwards a **Your assistant** panel appears under Account so they can revise
+the name and instructions, with the same preview. That panel stays hidden for
+staff-managed companies.
+
+**The permission is enforced in the database, not just the interface.** The
+guard trigger normally reverts any client attempt to write `system_prompt` or
+`assistant_name`; it makes an exception only when `can_self_serve_gpt` is true
+on the *existing* row, so a client cannot grant themselves the right and use it
+in the same statement. `ai_model`, `ai_api_key`, `status`, `api_customer_id`,
+`is_admin` and `can_self_serve_gpt` itself remain staff-only in every case.
 
 ### What admins can and cannot do
 

@@ -146,6 +146,20 @@
 
       <p class="label" style="margin-bottom:-6px">The assistant</p>
 
+      <div class="setting" style="padding:14px 0;border-bottom:1px solid var(--line)">
+        <div class="setting-copy">
+          <b>Let this company build their own</b>
+          <span>They are prompted to write their own assistant the next time they
+                sign in, using the default 120b model. Leave the prompt below empty
+                if you want them to start from scratch.</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="fSelfServe">
+          <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+          <span class="sr-only">Let this company build their own assistant</span>
+        </label>
+      </div>
+
       <div class="field">
         <label for="fAssistant">Assistant name</label>
         <input id="fAssistant" name="assistant_name" placeholder="Acme Ops Assistant">

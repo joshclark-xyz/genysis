@@ -46,5 +46,14 @@ window.GENYSIS_CONFIG = {
      Minutes of inactivity before a client is signed out, and how many seconds
      of warning they get first. */
   IDLE_TIMEOUT_MINUTES: 6,
-  IDLE_WARNING_SECONDS: 45
+  IDLE_WARNING_SECONDS: 45,
+
+  /* Longest reply the assistant may produce, in tokens.
+
+     This is the main lever on how many people can chat at once. The provider
+     bills a tokens-per-minute budget shared by every client on the account, so
+     a smaller cap means more simultaneous conversations fit inside it - at the
+     cost of truncating long answers. 1024 suits detailed replies; drop to
+     500-700 if 429s are frequent and answers are usually short. */
+  AI_MAX_TOKENS: 1024
 };

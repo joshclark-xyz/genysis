@@ -115,7 +115,9 @@
           (c.is_admin ? ' <span class="badge" style="margin-left:6px">Staff</span>' : "") +
           "</b><small>" + esc(c.email || "") + "</small></div>" +
         '<div class="admin-meta">' + esc(c.assistant_name || "No assistant") +
-          "<small>" + (hasPrompt ? "Prompt set" : "No prompt yet") + "</small></div>" +
+          "<small>" + (hasPrompt ? "Prompt set"
+            : (c.can_self_serve_gpt ? "Self-serve — awaiting them" : "No prompt yet")) +
+          "</small></div>" +
         '<div class="admin-meta">' + (STATUS_BADGE[c.status] || c.status) +
           "<small>" + Number(c.message_count || 0) + " messages</small></div>" +
         '<div class="admin-actions">' +
@@ -155,11 +157,14 @@
         renderStats();
         renderList();
         // Nudge staff to finish the job if the assistant has no instructions.
-        if (!company.system_prompt || !String(company.system_prompt).trim()) {
+        var noPrompt = !company.system_prompt || !String(company.system_prompt).trim();
+        if (noPrompt && company.can_self_serve_gpt) {
+          say2("Approved. They will be asked to build their own assistant when they next sign in.");
+        } else if (noPrompt) {
           openDrawer(id);
           say($("#drawerAlert"), "warn", "Approved. ",
             "This company still has no system prompt, so the assistant will not start yet. " +
-            "Write one below and save.");
+            "Write one below, or switch on \u201cLet this company build their own\u201d.");
         }
       })
       .catch(function (err) {
@@ -167,6 +172,16 @@
         btn.textContent = "Approve";
         alert("Could not approve: " + (err.message || err));
       });
+  }
+
+  /** Brief confirmation when there is no drawer open to put a message in. */
+  function say2(text) {
+    var t = document.createElement("div");
+    t.className = "admin-toast";
+    t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(function () { t.classList.add("is-out"); }, 3400);
+    setTimeout(function () { t.remove(); }, 4000);
   }
 
   function find(id) {
@@ -190,6 +205,7 @@
     $("#fPrompt").value = c.system_prompt || "";
     $("#fApiKey").value = c.ai_api_key || "";
     $("#fCustomerId").value = c.api_customer_id || "";
+    $("#fSelfServe").checked = !!c.can_self_serve_gpt;
     $("#drawerAlert").hidden = true;
     $("#testResult").hidden = true;
     $("#testResult").innerHTML = "";
@@ -250,7 +266,8 @@
       ai_model: $("#fModel").value,
       system_prompt: $("#fPrompt").value.trim() || null,
       ai_api_key: $("#fApiKey").value.trim() || null,
-      api_customer_id: $("#fCustomerId").value.trim() || null
+      api_customer_id: $("#fCustomerId").value.trim() || null,
+      can_self_serve_gpt: $("#fSelfServe").checked
     };
 
     Auth.client()
