@@ -24,6 +24,8 @@ plain HTML, CSS and JavaScript. No build step, no framework, no npm.
 | `supabase/migrations/0003_admin.sql` | Admin flag, staff RLS, admin view |
 | `supabase/migrations/0004_file_terms.sql` | Records file depot terms acceptance |
 | `supabase/migrations/0005_self_serve_gpt.sql` | Lets a company build its own assistant |
+| `supabase/migrations/0006_upload_permission.sql` | Uploading is off until granted |
+| `assets/js/site-chat.js` | Public website assistant |
 | `admin.html` | Staff console: approve companies, build their GPT |
 | `assets/js/ai.js` | The chat client (streaming + non-streaming) |
 | `assets/js/markdown.js` | Renders assistant replies as sanitized markdown |
@@ -54,6 +56,7 @@ Supabase dashboard → **SQL Editor**. Run both files in order:
 3. `supabase/migrations/0003_admin.sql`
 4. `supabase/migrations/0004_file_terms.sql`
 5. `supabase/migrations/0005_self_serve_gpt.sql`
+6. `supabase/migrations/0006_upload_permission.sql`
 
 It is safe to re-run. It creates:
 
@@ -393,6 +396,47 @@ DELETE {BASE}/files/{key}    -> { ok: true }
 
 All require `Authorization: Bearer <supabase access token>`.
 
+
+### Uploading requires permission
+
+**Nobody can upload until you allow it.** `can_upload_files` defaults to false,
+so every account — new or existing — starts locked. Viewing and downloading
+whatever is already in their space stays available.
+
+Grant it per company with the **Allow file uploads** switch in the admin
+company editor.
+
+This is enforced in two places, not one:
+
+- The dashboard hides the uploader and shows a "not enabled" notice with a
+  request-access link.
+- **The Worker asks the database before accepting any upload**, using the
+  caller's own token, and returns 403 if the flag is false. A hand-crafted POST
+  straight at the endpoint is refused just the same.
+
+That second check needs `SUPABASE_ANON_KEY` in `cloudflare/wrangler.toml` (it
+is already filled in) so the Worker can query PostgREST. **Redeploy the Worker
+after running migration 0006**, or uploads will fail for everyone:
+
+```bash
+cd cloudflare && npx wrangler deploy
+```
+
+
+## Website assistant
+
+`assets/js/site-chat.js` puts a chat widget on the four public pages. It knows
+who Ron and Josh are, the five service lines, the CASPER stages, and the phone
+number, and it is instructed not to invent prices, timelines or guarantees —
+when asked for either it declines and points at the phone.
+
+Edit the knowledge in `SYSTEM_PROMPT` at the top of that file. It is not on the
+dashboard or login pages.
+
+⚠️ **The API key in that file is served to every visitor.** A static page has
+nowhere to hide it. That is fine for a test key; before it carries a billable
+one, put a Worker in front of the AI endpoint the way `cloudflare/worker.js`
+does for files, and point `CFG.base` at the Worker instead.
 
 ## Session security
 

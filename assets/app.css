@@ -1739,3 +1739,34 @@
   animation: spin 0.7s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) { .msg-busy::before { animation: none; } }
+
+/* Shown in place of the dropzone when uploading has not been granted. */
+.upload-locked {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 24px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-lg);
+  background: rgba(216, 166, 87, 0.05);
+}
+.upload-locked > div { flex: 1; min-width: 220px; }
+.upload-locked b { display: block; font-size: 14.5px; font-weight: 600; margin-bottom: 4px; }
+.upload-locked span { font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+
+.upload-locked-icon {
+  flex: none;
+  width: 42px; height: 42px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(216, 166, 87, 0.4);
+  background: rgba(216, 166, 87, 0.1);
+  color: var(--warn);
+}
+.upload-locked-icon svg { width: 20px; height: 20px; }
+
+@media (max-width: 640px) {
+  .upload-locked { padding: 18px; }
+  .upload-locked .btn { width: 100%; justify-content: center; }
+}

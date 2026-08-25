@@ -206,6 +206,7 @@
     $("#fApiKey").value = c.ai_api_key || "";
     $("#fCustomerId").value = c.api_customer_id || "";
     $("#fSelfServe").checked = !!c.can_self_serve_gpt;
+    $("#fCanUpload").checked = !!c.can_upload_files;
     $("#drawerAlert").hidden = true;
     $("#testResult").hidden = true;
     $("#testResult").innerHTML = "";
@@ -267,7 +268,8 @@
       system_prompt: $("#fPrompt").value.trim() || null,
       ai_api_key: $("#fApiKey").value.trim() || null,
       api_customer_id: $("#fCustomerId").value.trim() || null,
-      can_self_serve_gpt: $("#fSelfServe").checked
+      can_self_serve_gpt: $("#fSelfServe").checked,
+      can_upload_files: $("#fCanUpload").checked
     };
 
     Auth.client()

@@ -842,7 +842,18 @@
 
     $("#filesUnavailable").hidden = true;
     $("#filesShell").hidden = false;
-    wireDropzone();
+
+    /* Uploading is off until Genysis IQ grants it. Viewing what is already
+       stored stays available, so the list still loads. */
+    var mayUpload = !!(state.company && state.company.can_upload_files);
+    var dz = $("#dropzone");
+    var locked = $("#uploadLocked");
+
+    if (dz) dz.hidden = !mayUpload;
+    if (locked) locked.hidden = mayUpload;
+
+    if (mayUpload) wireDropzone();
+    $("#fileSearch").addEventListener("input", renderFiles);
     refreshFiles();
   }
 
@@ -872,7 +883,9 @@
       $("#filesList").innerHTML = emptyState(
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M3 15v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/></svg>',
         "No files yet",
-        "Upload anything your team needs to share with Genysis IQ, or keep to hand.");
+        state.company && state.company.can_upload_files
+          ? "Upload anything your team needs to share with Genysis IQ, or keep to hand."
+          : "Genysis IQ has not enabled uploads for this account yet.");
       return;
     }
 
@@ -930,8 +943,6 @@
     var dz = $("#dropzone"), input = $("#fileInput");
     if (dz.dataset.wired) return;
     dz.dataset.wired = "yes";
-
-    $("#fileSearch").addEventListener("input", renderFiles);
 
     dz.addEventListener("click", function () { input.click(); });
     dz.addEventListener("keydown", function (e) {

@@ -157,6 +157,6 @@ ACCESSIBILITY AND MOTION
 
 
 CONTACT
-  Phone:   689.444.6327
+  Phone:   689.388.7353
   Email:   info@genysisiq.com
   Website: www.genysisiq.com
