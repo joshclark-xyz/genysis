@@ -77,6 +77,10 @@ body {
 
 body.is-locked { overflow: hidden; }
 
+/* An explicit `display` on a component beats the browser's [hidden] rule, so
+   anything hidden in markup would still render. Settle it once, globally. */
+[hidden] { display: none !important; }
+
 /* Film grain — keeps flat dark areas from banding and reads as print texture */
 body::after {
   content: "";
@@ -811,7 +815,10 @@ h3.display { font-size: clamp(1.5rem, 2.4vw, 2.1rem); }
 
 .feature-visual {
   position: relative;
-  align-self: stretch;          /* match the height of the copy beside it */
+  /* Deliberately NOT stretched to the copy column's height. Doing that makes
+     this a portrait box, and `cover` then crops a landscape photo hard from
+     the sides - which cut people out of the frame. */
+  align-self: center;
   border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid var(--line-2);
@@ -819,10 +826,10 @@ h3.display { font-size: clamp(1.5rem, 2.4vw, 2.1rem); }
 
 .feature-visual img {
   width: 100%;
-  height: 100%;
-  min-height: 420px;
+  height: auto;
+  /* Matches the source files, so `cover` has nothing to trim. */
+  aspect-ratio: 4 / 3;
   object-fit: cover;
-  transform: scale(1.06);
   transition: transform 1.4s var(--ease);
 }
 
@@ -835,7 +842,7 @@ h3.display { font-size: clamp(1.5rem, 2.4vw, 2.1rem); }
   pointer-events: none;
 }
 
-.feature-visual:hover img { transform: scale(1); }
+.feature-visual:hover img { transform: scale(1.04); }
 
 /* small overlapping chip on the image */
 .visual-chip {
@@ -1672,7 +1679,6 @@ ul.checklist { list-style: none; padding: 0; }
   .casper { grid-template-columns: 1fr 1fr; }
   .orgs { grid-template-columns: 1fr 1fr; gap: 12px; }
   .org { min-height: 140px; padding: 18px 14px; }
-  .feature-visual img { min-height: 300px; }
   .svc-list { grid-template-columns: 1fr; }
   .form { grid-template-columns: 1fr; }
   .principles { grid-template-columns: 1fr; }
