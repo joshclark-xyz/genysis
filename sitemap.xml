@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <url>
+    <loc>https://www.genysisiq.com/</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://www.genysisiq.com/assets/img/hero-poster.jpg</image:loc>
+      <image:title>Genysis IQ — Scale Smarter. Grow Faster.</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.genysisiq.com/assets/img/office-structured.jpg</image:loc>
+      <image:title>A systems-driven company</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://www.genysisiq.com/services.html</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.genysisiq.com/about.html</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://www.genysisiq.com/assets/img/ron-clark.jpg</image:loc>
+      <image:title>Ronald J. Clark, Founder and CEO of Genysis IQ</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.genysisiq.com/assets/img/josh-clark.jpg</image:loc>
+      <image:title>Joshua Clark, AI and Technology Director at Genysis IQ</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://www.genysisiq.com/contact.html</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.genysisiq.com/privacy.html</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://www.genysisiq.com/terms.html</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+</urlset>

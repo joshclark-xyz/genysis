@@ -1520,6 +1520,15 @@ ul.checklist { list-style: none; padding: 0; }
   color: var(--faint);
 }
 
+/* Privacy / Terms, centred between the copyright and the tagline. */
+.footer-legal { display: flex; gap: 18px; }
+.footer-legal a {
+  color: var(--faint);
+  text-decoration: none;
+  transition: color 0.3s var(--ease);
+}
+.footer-legal a:hover { color: var(--text); }
+
 /* oversized ghost wordmark bleeding off the bottom */
 .footer-ghost {
   position: absolute;

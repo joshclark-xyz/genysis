@@ -55,5 +55,17 @@ window.GENYSIS_CONFIG = {
      a smaller cap means more simultaneous conversations fit inside it - at the
      cost of truncating long answers. 1024 suits detailed replies; drop to
      500-700 if 429s are frequent and answers are usually short. */
+  /* --------------------------------------------------------- analytics ----
+     First-party traffic measurement, written to our own Supabase project by
+     assets/js/analytics.js. No cookies, no third-party script, no IP stored.
+     Requires migration 0007_analytics.sql.
+
+     Set ANALYTICS_ENABLED to false to switch tracking off site-wide without
+     touching any HTML. ANALYTICS_TRACK_LOCALHOST lets you see your own test
+     traffic in the console while developing - leave it false in production so
+     local testing does not pollute the real numbers. */
+  ANALYTICS_ENABLED: true,
+  ANALYTICS_TRACK_LOCALHOST: false,
+
   AI_MAX_TOKENS: 1024
 };

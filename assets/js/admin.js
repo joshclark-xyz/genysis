@@ -45,6 +45,37 @@
     scrim.classList.remove("is-open");
   });
 
+  /* ---------------------------------------------------------- view swap -- */
+
+  var VIEWS = {
+    companies: ["Registered companies", "Approve accounts and build their assistants."],
+    analytics: ["Website traffic", "Live visitor activity across genysisiq.com."]
+  };
+
+  function showView(name) {
+    if (!VIEWS[name]) name = "companies";
+    $$("[data-panel]").forEach(function (p) { p.hidden = p.getAttribute("data-panel") !== name; });
+    $$(".side-nav a[data-view]").forEach(function (a) {
+      a.classList.toggle("is-active", a.getAttribute("data-view") === name);
+    });
+    $("#viewTitle").textContent = VIEWS[name][0];
+    $("#viewSub").textContent = VIEWS[name][1];
+    side.classList.remove("is-open");
+    scrim.classList.remove("is-open");
+    // Let the analytics module know it is on screen, so it only does work
+    // (and only holds a realtime subscription) while someone is looking.
+    document.dispatchEvent(new CustomEvent("genysis:view", { detail: name }));
+  }
+
+  $$(".side-nav a[data-view]").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      var v = a.getAttribute("data-view");
+      history.replaceState(null, "", "#" + v);
+      showView(v);
+    });
+  });
+
   $("#signOutBtn").addEventListener("click", function () {
     Auth.signOut().then(function () { location.replace("login.html"); });
   });
@@ -363,6 +394,11 @@
       }
 
       $("#adminView").hidden = false;
+      showView((location.hash || "#companies").slice(1));
+      // Modules that need a confirmed admin session wait on this.
+      document.dispatchEvent(new CustomEvent("genysis:admin-ready", {
+        detail: { user: res.user, company: me }
+      }));
       return loadCompanies();
     });
   }).catch(function (err) {

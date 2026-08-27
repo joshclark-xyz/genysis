@@ -1,0 +1,38 @@
+# Genysis IQ — https://www.genysisiq.com
+User-agent: *
+Allow: /
+
+# Private application surfaces. These also carry <meta name="robots" content="noindex">,
+# which is what actually keeps them out of the index — this block just saves the crawl.
+Disallow: /login.html
+Disallow: /dashboard.html
+Disallow: /admin.html
+Disallow: /update-password.html
+Disallow: /assets/js/
+Disallow: /cloudflare/
+Disallow: /supabase/
+Disallow: /_source-originals/
+
+# Answer engines. Allowed deliberately — we want Genysis IQ to be citable.
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+# Scrapers with no search value.
+User-agent: AhrefsBot
+Disallow: /
+User-agent: SemrushBot
+Disallow: /
+User-agent: DotBot
+Disallow: /
+User-agent: MJ12bot
+Disallow: /
+
+Sitemap: https://www.genysisiq.com/sitemap.xml
