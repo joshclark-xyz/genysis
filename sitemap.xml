@@ -88,4 +88,11 @@
     <priority>0.9</priority>
   </url>
 
+  <url>
+    <loc>https://www.genysisiq.com/assessment.html</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
 </urlset>

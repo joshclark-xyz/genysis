@@ -2420,3 +2420,290 @@ ul.checklist { list-style: none; padding: 0; }
   .faq-item summary { padding: 18px 0; gap: 14px; }
   .faq-a { padding-right: 0; }
 }
+
+/* Master-category headers on Services. Scaling is the discipline; the numbered
+   services beneath are capabilities, not a menu of separate businesses. */
+.svc-group {
+  margin: clamp(30px, 5vw, 64px) 0 clamp(18px, 2.5vw, 30px);
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line-2);
+}
+.svc-group:first-child { margin-top: 0; }
+.svc-group h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 400;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+.svc-group p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 68ch;
+  line-height: 1.7;
+  font-size: 15px;
+}
+
+/* Homepage FAQ preview - same component as the FAQ page, lighter chrome. */
+.faq--preview { max-width: 900px; margin-top: 8px; }
+.faq--preview .faq-item summary h3 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(15px, 1.5vw, 16.5px);
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.5;
+  transition: color 0.3s var(--ease);
+}
+.faq--preview .faq-item summary:hover h3 { color: var(--blue-soft); }
+
+.faq-more { margin: 26px 0 0; }
+.faq-more a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--blue-soft);
+  text-decoration: none;
+  font-size: 14.5px;
+  transition: gap 0.3s var(--ease);
+}
+.faq-more a:hover { gap: 14px; }
+.faq-more svg { width: 16px; height: 16px; }
+
+/* =============================================================================
+   Scaling readiness assessment
+   ============================================================================= */
+.assess { max-width: 780px; }
+
+.assess-progress {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.assess-progress i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--blue);
+  border-radius: 100px;
+  transition: width 0.45s var(--ease);
+}
+.assess-count {
+  margin: 0 0 26px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.assess-q { border: 0; margin: 0; padding: 0; }
+.assess-q legend {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  line-height: 1.25;
+  color: var(--text);
+  margin-bottom: 26px;
+  padding: 0;
+}
+
+.assess-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+  cursor: pointer;
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease),
+              color 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.assess-opt:hover { border-color: rgba(74, 124, 232, 0.45); color: var(--text); transform: translateX(3px); }
+.assess-opt input { margin: 3px 0 0; accent-color: var(--blue); flex: none; }
+.assess-opt.is-on {
+  border-color: var(--blue);
+  background: rgba(74, 124, 232, 0.1);
+  color: var(--text);
+}
+/* Keyboard focus has to be visible even though the input is tiny. */
+.assess-opt:focus-within { outline: 2px solid var(--blue-soft); outline-offset: 2px; }
+
+.assess-nav { display: flex; gap: 12px; align-items: center; margin-top: 24px; }
+.assess-nav .btn-primary { margin-left: auto; }
+
+/* ------------------------------------------------------------- result ----- */
+#assessResult { animation: faqIn 0.5s var(--ease); }
+
+.assess-score {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: clamp(20px, 4vw, 40px);
+  align-items: center;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+}
+.assess-score h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  font-weight: 400;
+  margin: 10px 0 8px;
+  color: var(--text);
+}
+.assess-line { color: var(--blue-soft); font-size: 16px; margin: 0 0 12px; }
+.assess-score p { color: var(--muted); line-height: 1.72; margin: 0; }
+
+/* conic-gradient dial - no chart library for one number */
+.assess-dial {
+  width: 150px;
+  height: 150px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    conic-gradient(var(--blue) calc(var(--pct) * 1%), rgba(255, 255, 255, 0.07) 0);
+  position: relative;
+}
+.assess-dial::after {
+  content: "";
+  position: absolute;
+  inset: 11px;
+  border-radius: 50%;
+  background: var(--bg);
+}
+.assess-dial span {
+  position: relative;
+  z-index: 1;
+  font-family: var(--serif);
+  font-size: 44px;
+  color: var(--text);
+  line-height: 1;
+}
+.assess-dial small { font-size: 15px; color: var(--faint); }
+
+.assess-breakdown { padding: 30px 0; border-bottom: 1px solid var(--line); }
+.assess-breakdown h3,
+.assess-constraint h3 { color: var(--text); }
+.assess-breakdown h3 {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 500;
+  margin: 0 0 18px;
+}
+.assess-stage {
+  display: grid;
+  grid-template-columns: 108px 1fr 44px;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 11px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.assess-stage b { color: var(--muted); font-weight: 500; }
+.assess-stage > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.assess-stage.is-weak b { color: var(--blue-soft); }
+.assess-stage.is-weak .assess-meter i { background: var(--blue-soft); }
+.assess-meter {
+  height: 7px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+.assess-meter i {
+  display: block;
+  height: 100%;
+  border-radius: 100px;
+  background: rgba(126, 168, 245, 0.4);
+  transition: width 0.7s var(--ease);
+}
+
+.assess-constraint { padding: 30px 0; }
+.assess-constraint h3 {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 400;
+  margin: 10px 0 12px;
+}
+.assess-constraint p { color: var(--muted); line-height: 1.72; margin: 0 0 12px; }
+.assess-note {
+  font-size: 13.5px;
+  color: var(--faint);
+  border-left: 2px solid var(--line-2);
+  padding-left: 14px;
+}
+
+.assess-cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.assess-cta .linklike { margin-left: 6px; }
+
+@media (max-width: 620px) {
+  .assess-score { grid-template-columns: 1fr; justify-items: start; }
+  .assess-dial { width: 120px; height: 120px; }
+  .assess-dial span { font-size: 36px; }
+  .assess-stage { grid-template-columns: 88px 1fr 40px; gap: 10px; font-size: 12.5px; }
+  .assess-nav .btn-primary { margin-left: 0; }
+  .assess-nav { flex-direction: column-reverse; align-items: stretch; }
+}
+
+/* Assessment entry point on the homepage */
+.assess-promo {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  flex-wrap: wrap;
+  margin-top: 34px;
+  padding: 26px 30px;
+  border: 1px solid rgba(74, 124, 232, 0.3);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(74, 124, 232, 0.09), rgba(74, 124, 232, 0.03));
+}
+.assess-promo > div { flex: 1; min-width: 260px; }
+.assess-promo h3 {
+  font-family: var(--serif);
+  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+  font-weight: 400;
+  color: var(--text);
+  margin: 8px 0 8px;
+}
+.assess-promo p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.65; max-width: 60ch; }
+
+/* Case studies */
+.cases { display: grid; gap: clamp(24px, 3.5vw, 44px); }
+.case {
+  padding-bottom: clamp(24px, 3.5vw, 44px);
+  border-bottom: 1px solid var(--line);
+}
+.case:last-child { border-bottom: 0; padding-bottom: 0; }
+.case > header { margin-bottom: 22px; }
+.case h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 400;
+  color: var(--text);
+  margin: 8px 0 0;
+}
+.case-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(18px, 2.5vw, 34px); }
+.case-grid > * { min-width: 0; }
+.case-grid h3 {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 500;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.case-grid p { margin: 0; color: var(--muted); line-height: 1.7; font-size: 14.5px; }
+.case-grid ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; }
+.case-grid li { color: var(--muted); line-height: 1.6; font-size: 14.5px; }
+.case-grid li::marker { color: var(--blue-soft); }
+@media (max-width: 860px) { .case-grid { grid-template-columns: 1fr; } }
