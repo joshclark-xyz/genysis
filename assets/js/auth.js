@@ -60,10 +60,43 @@
     for (var key in MESSAGES) {
       if (raw.indexOf(key) !== -1) return MESSAGES[key];
     }
+    if (error.__timeout || raw.indexOf("auth-timeout") !== -1) {
+      return "Our sign-in service is not responding right now. This is a problem on " +
+             "our side, not with your details \u2014 please try again in a few minutes. " +
+             "If it keeps happening, email info@genysisiq.com.";
+    }
     if (raw.indexOf("failed to fetch") !== -1 || raw.indexOf("networkerror") !== -1) {
       return "Could not reach the server. Check your connection and try again.";
     }
     return error.message || "Something went wrong. Please try again.";
+  }
+
+  /* --------------------------------------------------------------- timeouts --
+     Supabase's auth service can stop answering while the rest of the project
+     stays healthy. A fetch to a service that accepts the connection but never
+     replies hangs forever, and the promise simply never settles - which shows
+     up as a "Signing in..." button that spins until the tab is closed.
+
+     Every network-bound auth call is therefore raced against a timer, so a dead
+     endpoint produces an honest error instead of an infinite spinner. */
+
+  var AUTH_TIMEOUT_MS = Number(cfg.AUTH_TIMEOUT_MS || 20000);
+
+  function withTimeout(promise, label) {
+    var timer;
+    return Promise.race([
+      promise,
+      new Promise(function (_, reject) {
+        timer = setTimeout(function () {
+          var err = new Error("auth-timeout");
+          err.__timeout = label || "request";
+          reject(err);
+        }, AUTH_TIMEOUT_MS);
+      })
+    ]).then(
+      function (v) { clearTimeout(timer); return v; },
+      function (e) { clearTimeout(timer); throw e; }
+    );
   }
 
   /* ------------------------------------------------------------- actions -- */
@@ -84,7 +117,7 @@
     humanize: humanize,
 
     signUp: function (details) {
-      return requireClient().auth.signUp({
+      return withTimeout(requireClient().auth.signUp({
         email: details.email,
         password: details.password,
         options: {
@@ -95,11 +128,13 @@
             phone: details.phone || ""
           }
         }
-      });
+      }), "sign up");
     },
 
     signIn: function (email, password) {
-      return requireClient().auth.signInWithPassword({ email: email, password: password });
+      return withTimeout(
+        requireClient().auth.signInWithPassword({ email: email, password: password }),
+        "sign in");
     },
 
     signOut: function () {
@@ -107,21 +142,23 @@
     },
 
     resendVerification: function (email) {
-      return requireClient().auth.resend({
+      return withTimeout(requireClient().auth.resend({
         type: "signup",
         email: email,
         options: { emailRedirectTo: absolute(cfg.REDIRECT_AFTER_VERIFY || "dashboard.html") }
-      });
+      }), "resend");
     },
 
     sendPasswordReset: function (email) {
-      return requireClient().auth.resetPasswordForEmail(email, {
-        redirectTo: absolute(cfg.REDIRECT_AFTER_RECOVERY || "update-password.html")
-      });
+      return withTimeout(
+        requireClient().auth.resetPasswordForEmail(email, {
+          redirectTo: absolute(cfg.REDIRECT_AFTER_RECOVERY || "update-password.html")
+        }), "password reset");
     },
 
     updatePassword: function (password) {
-      return requireClient().auth.updateUser({ password: password });
+      return withTimeout(requireClient().auth.updateUser({ password: password }),
+                         "password update");
     },
 
     getSession: function () {

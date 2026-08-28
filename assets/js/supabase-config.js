@@ -64,6 +64,12 @@ window.GENYSIS_CONFIG = {
      touching any HTML. ANALYTICS_TRACK_LOCALHOST lets you see your own test
      traffic in the console while developing - leave it false in production so
      local testing does not pollute the real numbers. */
+  /* ------------------------------------------------------------- auth ----
+     How long to wait on Supabase's auth service before giving up. Supabase
+     can leave /auth/v1 accepting connections but never replying, which would
+     otherwise hang the sign-in button forever. */
+  AUTH_TIMEOUT_MS: 20000,
+
   ANALYTICS_ENABLED: true,
   ANALYTICS_TRACK_LOCALHOST: false,
 

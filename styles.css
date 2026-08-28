@@ -2098,3 +2098,325 @@ ul.checklist { list-style: none; padding: 0; }
   .legal-table th, .legal-table td { display: block; width: auto; padding-right: 0; }
   .legal-table th { border-bottom: 0; padding-bottom: 2px; }
 }
+
+/* =============================================================================
+   SMS consent checkbox (A2P 10DLC call to action)
+   Deliberately plain and legible - a carrier reviewer has to be able to read
+   the disclosures and see that the box starts unchecked.
+   ============================================================================= */
+.consent {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 16px 18px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.02);
+}
+.consent input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+  flex: none;
+}
+.consent label {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+  cursor: pointer;
+  /* Override the uppercase field label styling used elsewhere in the form. */
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.consent label b {
+  display: block;
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+.consent a { color: var(--blue-soft); }
+
+/* Sample SMS, shown as it would arrive on a phone. Monospace because a carrier
+   reviewer is counting characters and looking for STOP/HELP in the body. */
+.legal-sample {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text);
+  background: rgba(74, 124, 232, 0.07);
+  border: 1px solid rgba(74, 124, 232, 0.28);
+  border-radius: var(--radius);
+  padding: 13px 15px;
+  margin: 0 0 12px;
+}
+
+/* Verbatim consent wording - quoted so it reads as an exact reproduction. */
+.legal-quote {
+  margin: 0 0 16px;
+  padding: 14px 18px;
+  border-left: 2px solid var(--blue);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.legal-quote b { display: block; color: var(--text); font-weight: 600; margin-bottom: 5px; }
+
+/* =============================================================================
+   Booking page
+   ============================================================================= */
+.booking {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: clamp(24px, 3vw, 44px);
+  align-items: start;
+}
+.booking > * { min-width: 0; }
+
+.booking-aside { position: sticky; top: 110px; }
+
+.booking-steps { list-style: none; margin: 18px 0 26px; padding: 0; counter-reset: bs; }
+.booking-steps li {
+  counter-increment: bs;
+  position: relative;
+  padding: 0 0 20px 40px;
+  border-left: 1px solid var(--line);
+  margin-left: 11px;
+}
+.booking-steps li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.booking-steps li::before {
+  content: counter(bs);
+  position: absolute;
+  left: -11px;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--blue-soft);
+  background: var(--bg);
+  border: 1px solid var(--line-2);
+}
+.booking-steps b { display: block; color: var(--text); font-weight: 500; margin-bottom: 4px; }
+.booking-steps span { display: block; color: var(--muted); font-size: 13.5px; line-height: 1.65; }
+
+.booking-note {
+  padding: 16px 18px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 14px;
+}
+.booking-note b { display: block; color: var(--text); font-size: 14px; margin-bottom: 4px; }
+.booking-note span { display: block; color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
+
+/* Calendly paints its own surface; the border keeps it inside our design. */
+.booking-main {
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.015);
+  min-height: 760px;
+}
+.booking-fallback { padding: 40px; color: var(--muted); }
+.booking-fallback a { color: var(--blue-soft); }
+
+@media (max-width: 900px) {
+  .booking { grid-template-columns: 1fr; }
+  .booking-aside { position: static; }
+  .booking-main { min-height: 700px; }
+}
+
+/* =============================================================================
+   CASPER page
+   ============================================================================= */
+.casper-why {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: clamp(24px, 4vw, 60px);
+  align-items: center;
+}
+.casper-why > * { min-width: 0; }
+
+.casper-map { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.casper-map a {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14.5px;
+  transition: border-color 0.3s var(--ease), transform 0.3s var(--ease), color 0.3s var(--ease);
+}
+.casper-map a:hover {
+  border-color: rgba(74, 124, 232, 0.5);
+  color: var(--text);
+  transform: translateX(4px);
+}
+.casper-map b {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--blue-soft);
+  width: 18px;
+  line-height: 1;
+}
+
+.casper-cta { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* the six stages */
+.cstages { display: grid; gap: clamp(28px, 4vw, 52px); }
+
+.cstage {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: clamp(20px, 3vw, 44px);
+  padding-bottom: clamp(28px, 4vw, 52px);
+  border-bottom: 1px solid var(--line);
+}
+.cstage:last-child { border-bottom: 0; padding-bottom: 0; }
+.cstage > * { min-width: 0; }
+
+.cstage-mark { position: sticky; top: 110px; align-self: start; }
+.cstage-letter {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(64px, 8vw, 104px);
+  line-height: 0.85;
+  color: var(--blue);
+  opacity: 0.9;
+}
+.cstage-num {
+  display: block;
+  margin-top: 10px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.cstage-body h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-weight: 400;
+  margin: 0 0 6px;
+  color: var(--text);
+}
+.cstage-tag {
+  color: var(--blue-soft);
+  font-size: 15px;
+  margin: 0 0 16px;
+}
+.cstage-body > p { color: var(--muted); line-height: 1.75; margin: 0 0 20px; }
+.cstage-body h3 {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+.cstage-body ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+.cstage-body li { color: var(--muted); line-height: 1.6; font-size: 14.5px; }
+.cstage-body li::marker { color: var(--blue-soft); }
+
+@media (max-width: 900px) {
+  .casper-why { grid-template-columns: 1fr; }
+  .cstage { grid-template-columns: 1fr; gap: 14px; }
+  .cstage-mark { position: static; display: flex; align-items: baseline; gap: 14px; }
+  .cstage-letter { font-size: 52px; }
+  .cstage-num { margin-top: 0; }
+}
+
+/* Who this is for. Sits under the hero lede and prequalifies before the CTA. */
+.hero-qualify {
+  margin: 18px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--line);
+  max-width: 60ch;
+  color: var(--faint);
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+.hero-qualify b { color: var(--muted); font-weight: 500; }
+
+/* =============================================================================
+   FAQ
+   Native <details> so answers are in the DOM for crawlers even when collapsed,
+   and so keyboard/screen-reader behaviour is the browser's, not ours.
+   ============================================================================= */
+.faq { max-width: 860px; }
+
+.faq-item {
+  border-bottom: 1px solid var(--line);
+}
+.faq-item summary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary h2 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--sans);
+  font-size: clamp(15px, 1.6vw, 17.5px);
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.5;
+  transition: color 0.3s var(--ease);
+}
+.faq-item summary:hover h2 { color: var(--blue-soft); }
+
+.faq-mark {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.faq-mark::before,
+.faq-mark::after {
+  content: "";
+  position: absolute;
+  background: var(--blue-soft);
+  transition: transform 0.35s var(--ease), opacity 0.35s var(--ease);
+}
+.faq-mark::before { inset: 7px 0; height: 2px; }
+.faq-mark::after  { inset: 0 7px; width: 2px; }
+.faq-item[open] .faq-mark::after { transform: scaleY(0); opacity: 0; }
+
+.faq-a { padding: 0 36px 24px 0; }
+.faq-a p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.78;
+  font-size: 15px;
+  max-width: 68ch;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .faq-item[open] .faq-a { animation: faqIn 0.4s var(--ease); }
+  @keyframes faqIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+@media (max-width: 560px) {
+  .faq-item summary { padding: 18px 0; gap: 14px; }
+  .faq-a { padding-right: 0; }
+}

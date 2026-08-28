@@ -62,7 +62,7 @@
         "height": 501
       },
       "image": "https://www.genysisiq.com/assets/img/hero-poster.jpg",
-      "slogan": "Scale Smarter. Grow Faster.",
+      "slogan": "Where Intelligent Business Scaling Begins",
       "description": "Genysis IQ is a business scaling and technology consultancy helping owners build business architecture, repeatable systems, stronger sales processes and practical artificial intelligence.",
       "telephone": "+1-689-388-7353",
       "email": "info@genysisiq.com",
@@ -177,7 +177,7 @@
     <a class="brand" href="index.html" aria-label="Genysis IQ — home">
       <img src="assets/genysis-logo-h.png"
            srcset="assets/genysis-logo-h.png 1x, assets/genysis-logo-h@2x.png 2x"
-           width="620" height="100" alt="Genysis IQ — Scale Smarter. Grow Faster.">
+           width="620" height="100" alt="Genysis IQ">
     </a>
     <button class="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="primary-nav">
       <span></span><span></span>
@@ -185,10 +185,11 @@
     <nav class="nav-links" id="primary-nav" aria-label="Primary">
       <a href="index.html">Home</a>
       <a href="services.html">Services</a>
+      <a href="casper.html">CASPER</a>
       <a href="about.html">About</a>
       <a href="contact.html" aria-current="page">Contact</a>
       <a href="login.html">Advisor Login</a>
-      <a class="btn btn-primary nav-cta" href="contact.html">Start Scaling</a>
+      <a class="btn btn-primary nav-cta" href="schedule.html">Book a Call</a>
     </nav>
   </div>
 </header>
@@ -249,6 +250,10 @@
               action="https://formsubmit.co/info@genysisiq.com" novalidate>
           <!-- Delivery settings for the form service; hidden from the visitor. -->
           <input type="hidden" name="_subject" value="Genysis IQ website inquiry">
+          <!-- Proof of consent. Keep these submissions: carriers can ask you to
+               produce the exact language a person agreed to, and when. -->
+          <input type="hidden" name="consent_language" value="I agree to receive text messages from Genysis IQ at the mobile number I provided above, including appointment reminders, call summaries and replies to my questions. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. Consent is not a condition of purchase.">
+          <input type="hidden" name="consent_source" value="https://www.genysisiq.com/contact.html">
           <input type="hidden" name="_template" value="table">
           <input type="hidden" name="_captcha" value="false">
           <input type="hidden" name="_next" value="https://www.genysisiq.com/contact.html?sent=1">
@@ -277,6 +282,28 @@
             <label for="message">What would you like help with?</label>
             <textarea id="message" name="message" required placeholder="Tell us where growth is getting stuck, what you want to change, or what you need the business to do next."></textarea>
             <span class="field-error">A short description helps us prepare.</span>
+          </div>
+
+          <!-- =================================================== SMS opt-in ==
+               A2P 10DLC / CTIA compliant call to action. Three things carriers
+               check and reject campaigns over, all of them deliberate here:
+                 1. unchecked by default - consent must be an affirmative act
+                 2. NOT a required field - consent cannot gate the form
+                 3. the disclosures sit in the label, next to the box, not
+                    buried in a policy page
+               If you change this wording, change the Message Flow text in the
+               Twilio campaign to match it exactly. -->
+          <div class="field field--full consent">
+            <input type="checkbox" id="smsConsent" name="sms_consent" value="Yes - agreed to receive SMS from Genysis IQ">
+            <label for="smsConsent">
+              <b>Text me about my inquiry.</b>
+              I agree to receive text messages from Genysis IQ at the mobile number I
+              provided above, including appointment reminders, call summaries and replies
+              to my questions. Message frequency varies. Message and data rates may apply.
+              Reply STOP to unsubscribe or HELP for help. Consent is not a condition of
+              purchase. See our <a href="privacy.html#messaging">Privacy Policy</a> and
+              <a href="terms.html#messaging">Terms of Service</a>.
+            </label>
           </div>
 
           <p class="form-status" role="status"></p>
@@ -318,7 +345,7 @@
       <a href="index.html" aria-label="Genysis IQ — home">
         <img class="footer-logo" src="assets/genysis-logo-light.png"
              srcset="assets/genysis-logo-light.png 1x, assets/genysis-logo-light@2x.png 2x"
-             width="880" height="501" alt="Genysis IQ — Scale Smarter. Grow Faster." loading="lazy">
+             width="880" height="501" alt="Genysis IQ" loading="lazy">
       </a>
       <p>Business architecture, scalable systems and practical AI for growth-minded companies.</p>
     </div>
@@ -327,10 +354,11 @@
       <div class="footer-links">
         <a href="index.html">Home</a>
         <a href="services.html">Services</a>
+        <a href="casper.html">CASPER framework</a>
         <a href="about.html">About us</a>
+        <a href="faq.html">Common questions</a>
+        <a href="schedule.html">Book a call</a>
         <a href="contact.html">Contact us</a>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
       </div>
     </div>
     <div>
@@ -347,8 +375,9 @@
     <span class="footer-legal">
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
+      <a href="messaging.html">SMS</a>
     </span>
-    <span>Scale Smarter. Grow Faster.</span>
+    <span>Where Intelligent Business Scaling Begins</span>
   </div>
   <span class="footer-ghost" aria-hidden="true">GENYSIS IQ</span>
 </footer>
