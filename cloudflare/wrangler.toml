@@ -1,0 +1,25 @@
+name = "genysis-files"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# The R2 bucket that holds client files. Create it first:
+#   npx wrangler r2 bucket create genysis-files
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "genysis-files"
+
+[vars]
+# Used to fetch the project's public signing keys, so the Worker can verify
+# who is calling. Must match SUPABASE_URL in assets/js/supabase-config.js.
+SUPABASE_URL = "https://dkxuuczaliwmvixqhadw.supabase.co"
+
+# Needed so the Worker can ask the database whether a caller may upload.
+# This is the publishable/anon key, safe to keep here.
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRreHV1Y3phbGl3bXZpeHFoYWR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NzMxMTcsImV4cCI6MjEwMzE0OTExN30.bd65SRwZQu2JcDl6uRsaf_F-kA1hq5ZulWgdtDZK9oc"
+
+# Comma separated. Leave blank during local testing to allow any origin.
+ALLOWED_ORIGINS = "https://www.genysisiq.com,http://localhost:8000"
+
+# Only needed if this project still uses the legacy HS256 "JWT Secret".
+# Current projects sign with ES256 and need no secret at all:
+#   npx wrangler secret put SUPABASE_JWT_SECRET
