@@ -232,7 +232,7 @@
     $("#drawerEmail").textContent = c.email || "";
     $("#fStatus").value = c.status || "pending";
     $("#fAssistant").value = c.assistant_name || "";
-    $("#fModel").value = c.ai_model || "openai/gpt-oss-120b";
+    $("#fModel").value = c.ai_model || "deepseek-flash";
     $("#fPrompt").value = c.system_prompt || "";
     $("#fApiKey").value = c.ai_api_key || "";
     $("#fCustomerId").value = c.api_customer_id || "";
@@ -353,7 +353,8 @@
       ai_api_key: $("#fApiKey").value.trim() || null
     };
 
-    window.GenysisChat.send(draft, [], "Briefly introduce yourself and what you can help with.")
+    window.GenysisChat.send(draft, [], "Briefly introduce yourself and what you can help with.",
+      { draft: true })
       .then(function (reply) {
         out.innerHTML = '<div class="test-out"><b>' +
           esc($("#fAssistant").value.trim() || "Assistant") + " replied</b>" +

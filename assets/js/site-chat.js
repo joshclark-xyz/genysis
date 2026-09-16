@@ -4,69 +4,33 @@
    A small chat widget for the marketing pages. It answers questions about what
    Genysis IQ does and points people at the phone number or the contact form.
 
-   SECURITY NOTE
-   The API key below is served to every visitor, because a static page has
-   nowhere to hide it. That is acceptable for a throwaway/test key. Before this
-   carries a billable key, put a Cloudflare Worker in front of the AI endpoint
-   (the file depot Worker is a working example) and point SITE_CHAT.endpoint at
-   it, so the key stays server-side. See DASHBOARD-SETUP.md.
+   Talks to our own proxy, api/chat.js (a Vercel function):
+
+     POST {AI_API_BASE_URL}/chat   { mode: "site", history, message }
+
+   The DeepSeek key is a Vercel environment variable and never reaches the
+   page. The system prompt lives in the proxy too, so this widget cannot be
+   repurposed as a general-purpose AI - the browser only sends the chat.
+
+   If the proxy reports no key configured, or cannot be reached, the widget
+   does not render at all rather than offering a chat that fails on the first
+   message. Visitors still have the phone number and the contact form.
    ============================================================================= */
 
 (function () {
   "use strict";
 
+  var gcfg = window.GENYSIS_CONFIG || {};
+
   var CFG = {
-    base: "https://api.wsgpolar.me",
-    key: "api_test123",
-    model: "openai/gpt-oss-120b",
-    maxTokens: 700,
+    endpoint: String(gcfg.AI_API_BASE_URL || "/api").replace(/\/+$/, "") + "/chat",
     phone: "689.388.7353",
     phoneHref: "tel:+16893887353",
     email: "info@genysisiq.com"
   };
 
-  var SYSTEM_PROMPT = [
-    "You are the assistant on the Genysis IQ website. Genysis IQ is a business",
-    "consultancy in Orlando, Florida, serving clients across the United States.",
-    "Its tagline is \"Where Intelligent Business Scaling Begins\"",
-    "",
-    "WHO RUNS IT",
-    "- Ron Clark, Founder and CEO. 39 years in business, four companies built,",
-    "  two with international operations. Created the CASPER framework. An",
-    "  award-winning author on AI with executive education from MIT, Wharton and",
-    "  the London School of Economics.",
-    "- Josh Clark, AI and Technology Director. Handles the technology and AI side.",
-    "",
-    "WHAT THEY DO",
-    "1. Business scaling and architecture - finding the real growth bottleneck,",
-    "   reducing owner dependency, role clarity, decision rights, operating rhythm.",
-    "2. Systems, processes and SOPs - turning knowledge held in people's heads",
-    "   into repeatable, documented workflows, KPIs and scorecards.",
-    "3. Sales and customer growth - sales process design, staff training, lead",
-    "   handling, customer journey, referral and retention.",
-    "4. Practical AI strategy - AI opportunity assessment, conversational AI,",
-    "   workflow automation, penetration testing and security assessment, vendor",
-    "   evaluation and implementation.",
-    "5. Digital presence and discoverability - website conversion, SEO, local and",
-    "   AI search, content architecture, Google Business Profile.",
-    "",
-    "THE CASPER FRAMEWORK",
-    "Clarity, Architecture, Systems, Processes, Evaluation, Replication. Six",
-    "stages taking a company from understanding its constraint to repeatable",
-    "execution that does not depend on the owner.",
-    "",
-    "HOW TO ANSWER",
-    "- Be brief and concrete. Two or three sentences is usually plenty.",
-    "- You are a first point of contact, not the consultant. Do not invent",
-    "  prices, timelines, guarantees or case studies. Genysis IQ has not",
-    "  published pricing - if asked, say it depends on scope and point them to a",
-    "  conversation.",
-    "- When someone is ready to talk, give them the phone number " + CFG.phone +
-      " (answered 24 hours a day, and it can book appointments) or the contact page.",
-    "- If a question is outside what Genysis IQ does, say so plainly and offer",
-    "  the phone number rather than guessing.",
-    "- Never claim to be human. You are the Genysis IQ website assistant."
-  ].join("\n");
+  /* The system prompt used to live here, in the page - which meant anyone could
+     read it and send their own instead. It is in api/chat.js now. */
 
   var GREETING =
     "Hi — I'm the Genysis IQ assistant. Ask me about scaling, systems, " +
@@ -276,37 +240,36 @@
   function ask(message, attempt) {
     attempt = attempt || 0;
 
-    var messages = [{ role: "system", content: SYSTEM_PROMPT }]
-      .concat(history.slice(-8))
-      .concat([{ role: "user", content: message }]);
-
-    return fetch(CFG.base + "/v1/ai/chat?API=" + encodeURIComponent(CFG.key), {
+    return fetch(CFG.endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: CFG.model,
-        messages: messages,
-        max_tokens: CFG.maxTokens,
-        temperature: 0.6,
-        reasoning_effort: "low"
+        mode: "site",
+        history: history.slice(-8),
+        message: message
       })
     }).then(function (res) {
       return res.text().then(function (body) {
+        var data = null;
+        try { data = JSON.parse(body); } catch (e) { /* handled below */ }
+
         if (!res.ok) {
-          // The token budget is shared, so a busy moment can bounce one request.
+          // 429 is the proxy's own brake or DeepSeek load; 5xx is transient.
           if ((res.status === 429 || res.status >= 500) && attempt < 2) {
-            var delay = (parseRetry(body) || 900 * Math.pow(2, attempt)) + Math.random() * 300;
+            var hinted = Number(res.headers.get("Retry-After")) * 1000;
+            var delay = (hinted > 0 ? Math.min(hinted, 8000) : 900 * Math.pow(2, attempt)) +
+                        Math.random() * 300;
             return new Promise(function (r) { setTimeout(r, delay); })
               .then(function () { return ask(message, attempt + 1); });
           }
+          var msg = data && data.error && data.error.message;
           throw new Error(
-            "We're getting a lot of questions right now. Please try again in a moment, " +
-            "or call " + CFG.phone + " — the line is answered 24/7."
+            (msg ? msg + " " : "We're getting a lot of questions right now. ") +
+            "You can also call " + CFG.phone + " — the line is answered 24/7."
           );
         }
-        var data = JSON.parse(body);
-        var content = data.choices && data.choices[0] &&
-          data.choices[0].message && data.choices[0].message.content;
+
+        var content = data && data.content;
         if (!content || !String(content).trim()) {
           throw new Error("Sorry, I did not catch that. Could you rephrase?");
         }
@@ -318,6 +281,26 @@
   /* ---------------------------------------------------------------- boot -- */
 
   function init() {
+    /* No key, no widget. A chat button that errors on the first message is
+       worse for a prospect than no chat button at all. The proxy says whether a
+       key is configured without ever revealing it. */
+    fetch(CFG.endpoint, { method: "GET", cache: "no-store" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .catch(function () { return null; })
+      .then(function (st) {
+        if (!st || !st.configured) {
+          if (window.console && console.info) {
+            console.info("[Genysis IQ] Site chat is off: the AI service is not " +
+              "configured or not reachable. Set DEEPSEEK_API_KEY in the Vercel " +
+              "project's environment variables.");
+          }
+          return;
+        }
+        start();
+      });
+  }
+
+  function start() {
     build();
     // Nudge first-time visitors once they have had a moment to read the page.
     if (!sessionStorage.getItem("genysis.chatSeen")) {

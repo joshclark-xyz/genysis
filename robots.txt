@@ -12,6 +12,9 @@ Disallow: /assets/js/
 Disallow: /cloudflare/
 Disallow: /supabase/
 Disallow: /_source-originals/
+# Recruiting site - not approved for public indexing yet.
+# Every page also carries a noindex meta tag.
+Disallow: /opportunity/
 
 # Answer engines. Allowed deliberately — we want Genysis IQ to be citable.
 User-agent: GPTBot

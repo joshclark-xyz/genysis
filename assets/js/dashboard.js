@@ -221,16 +221,31 @@
 
     var c = state.company || {};
 
-    // The endpoint or the company's key is missing.
-    if (!window.GenysisChat.isConfigured(c)) {
-      chatBlocked("Your assistant is being set up",
-        "Genysis IQ is still provisioning the assistant for your company. It will appear " +
-        "here as soon as it is connected, and we will email you when that happens.");
-      $("#tileAssistants").textContent = "—";
-      $("#tileAssistantsNote").textContent = "Not connected yet";
-      return;
-    }
+    // The DeepSeek key lives on the server now, so ask the proxy whether it is
+    // set. A company with its own key does not need the shared one.
+    window.GenysisChat.status().then(function (st) {
+      if (!st.reachable) {
+        chatBlocked("Assistant temporarily unavailable",
+          "We could not reach the assistant service. Please refresh in a moment. If this " +
+          "keeps happening, contact " +
+          '<a href="mailto:info@genysisiq.com" style="color:var(--blue-soft)">info@genysisiq.com</a>.');
+        $("#tileAssistants").textContent = "—";
+        $("#tileAssistantsNote").textContent = "Unavailable";
+        return;
+      }
+      if (!st.configured && !c.ai_api_key) {
+        chatBlocked("Your assistant is being set up",
+          "Genysis IQ is still provisioning the assistant for your company. It will appear " +
+          "here as soon as it is connected, and we will email you when that happens.");
+        $("#tileAssistants").textContent = "—";
+        $("#tileAssistantsNote").textContent = "Not connected yet";
+        return;
+      }
+      openAssistant(c);
+    });
+  }
 
+  function openAssistant(c) {
     // Connected, but no instructions written for this company yet.
     if (!c.system_prompt || !String(c.system_prompt).trim()) {
       chatBlocked("Almost ready",
@@ -626,8 +641,8 @@
             paint(full);
           },
           {
-            /* The account's token budget is shared, so a busy moment can bounce
-               one request. Say so rather than letting it look broken. */
+            /* DeepSeek can refuse a request under load (429) while others
+               succeed. Say so rather than letting it look broken. */
             onRetry: function (attempt, delay) {
               var note = typing && typing.querySelector(".msg-text");
               if (!note) return;
@@ -1160,8 +1175,9 @@
       alertIn(alertEl, "warn", "", "Asking your assistant to introduce itself…");
 
       window.GenysisChat.send(
-        { system_prompt: prompt, ai_model: c.ai_model, ai_api_key: c.ai_api_key },
-        [], "Briefly introduce yourself and what you can help with."
+        { system_prompt: prompt, ai_model: c.ai_model },
+        [], "Briefly introduce yourself and what you can help with.",
+        { draft: true }
       )
         .then(function (reply) {
           alertIn(alertEl, "ok", esc($("#acAssistantName").value.trim() || "It") + " would say: ",
@@ -1300,11 +1316,11 @@
     window.GenysisChat.send(
       {
         system_prompt: draft.prompt,
-        ai_model: (state.company && state.company.ai_model) || "openai/gpt-oss-120b",
-        ai_api_key: state.company && state.company.ai_api_key
+        ai_model: (state.company && state.company.ai_model) || "deepseek-flash"
       },
       [],
-      "Briefly introduce yourself and what you can help with."
+      "Briefly introduce yourself and what you can help with.",
+      { draft: true }
     )
       .then(function (reply) {
         gptSay("ok", esc(draft.name) + " would say: ",

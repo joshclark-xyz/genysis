@@ -21,20 +21,21 @@ window.GENYSIS_CONFIG = {
   REDIRECT_AFTER_RECOVERY: "update-password.html",
 
   /* ---------------------------------------------------------- AI endpoint --
-     The Genysis IQ chat API. The dashboard posts to
-     {AI_API_BASE_URL}/v1/ai/chat?API={key}
+     Where the dashboard and the website chat widget send messages. This is our
+     own proxy (api/chat.js), NOT DeepSeek.
 
-     AI_API_KEY is the fallback key, used when a company has no key of its own
-     in the `ai_api_key` column. Anything here is visible to any signed-in
-     client in the browser's network tab - see the security note in
-     DASHBOARD-SETUP.md before using a production key. Per-company keys stored
-     in Supabase are the better option, since a client can then only ever see
-     their own.
+     THERE IS NO API KEY IN THIS FILE, AND THERE MUST NEVER BE ONE. Everything
+     here is downloaded by every visitor. The DeepSeek key is a Vercel
+     environment variable, read only by the proxy:
 
-     Leave both blank and the dashboard shows an honest "being set up" state
-     instead of erroring. */
-  AI_API_BASE_URL: "https://api.wsgpolar.me",
-  AI_API_KEY: "api_test123",
+       Vercel -> this project -> Settings -> Environment Variables
+         DEEPSEEK_API_KEY        your pay-as-you-go key   (required)
+         DEEPSEEK_SITE_API_KEY   separate key for the public widget (optional)
+
+     "/api" means "this same website", which is correct on Vercel. Locally,
+     run the site with `vercel dev` so /api exists - a plain static server such
+     as `python3 -m http.server` does not run the proxy. */
+  AI_API_BASE_URL: "/api",
 
   /* ------------------------------------------------------------- files ----
      The Cloudflare Worker in front of the R2 bucket. A ready-to-deploy Worker
@@ -48,13 +49,12 @@ window.GENYSIS_CONFIG = {
   IDLE_TIMEOUT_MINUTES: 6,
   IDLE_WARNING_SECONDS: 45,
 
-  /* Longest reply the assistant may produce, in tokens.
+  /* ------------------------------------------------------------- auth ----
+     How long to wait on Supabase's auth service before giving up. Supabase
+     can leave /auth/v1 accepting connections but never replying, which would
+     otherwise hang the sign-in button forever. */
+  AUTH_TIMEOUT_MS: 20000,
 
-     This is the main lever on how many people can chat at once. The provider
-     bills a tokens-per-minute budget shared by every client on the account, so
-     a smaller cap means more simultaneous conversations fit inside it - at the
-     cost of truncating long answers. 1024 suits detailed replies; drop to
-     500-700 if 429s are frequent and answers are usually short. */
   /* --------------------------------------------------------- analytics ----
      First-party traffic measurement, written to our own Supabase project by
      assets/js/analytics.js. No cookies, no third-party script, no IP stored.
@@ -64,14 +64,9 @@ window.GENYSIS_CONFIG = {
      touching any HTML. ANALYTICS_TRACK_LOCALHOST lets you see your own test
      traffic in the console while developing - leave it false in production so
      local testing does not pollute the real numbers. */
-  /* ------------------------------------------------------------- auth ----
-     How long to wait on Supabase's auth service before giving up. Supabase
-     can leave /auth/v1 accepting connections but never replying, which would
-     otherwise hang the sign-in button forever. */
-  AUTH_TIMEOUT_MS: 20000,
-
   ANALYTICS_ENABLED: true,
-  ANALYTICS_TRACK_LOCALHOST: false,
+  ANALYTICS_TRACK_LOCALHOST: false
 
-  AI_MAX_TOKENS: 1024
+  /* Reply length is no longer set here. The proxy owns it - see LIMITS at the
+     top of api/chat.js - so a visitor cannot raise it. */
 };

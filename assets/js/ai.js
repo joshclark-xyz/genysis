@@ -1,15 +1,21 @@
 /* =============================================================================
    Genysis IQ - AI chat client
    -----------------------------------------------------------------------------
-   Talks to the Genysis IQ chat endpoint:
+   Talks to our own proxy, never to DeepSeek directly:
 
-     POST {AI_API_BASE_URL}/v1/ai/chat?API={key}
-     { model, messages: [{role, content}], max_tokens, temperature,
-       reasoning_effort }
+     POST {AI_API_BASE_URL}/chat          (api/chat.js, a Vercel function)
+     Authorization: Bearer {Supabase access token}
+     { mode: "dashboard", history, message, stream, draft? }
 
-   The system prompt is NEVER authored here. It comes from the company's
-   `system_prompt` column, which only Genysis IQ staff can write (a database
-   trigger blocks clients from changing it).
+   The DeepSeek key lives in a Vercel environment variable and is added by the
+   proxy. It is never in this file, never in the page, and never in the
+   browser's network tab.
+
+   The proxy also owns the system prompt and model: it loads them from the
+   company's row using the caller's token. The browser only sends the
+   conversation. The one exception is `draft` - an unsaved prompt being tested
+   before saving - which the proxy accepts only from staff and from companies
+   allowed to write their own assistant.
    ============================================================================= */
 
 (function (global) {
@@ -17,65 +23,83 @@
 
   var cfg = global.GENYSIS_CONFIG || {};
 
-  var DEFAULTS = {
-    model: "openai/gpt-oss-120b",
-    maxTokens: Number(cfg.AI_MAX_TOKENS) > 0 ? Number(cfg.AI_MAX_TOKENS) : 1024,
-    temperature: 0.7,
-    reasoningEffort: "low"
-  };
-
   /* Keeps requests to a sane size - the endpoint is stateless, so the whole
-     conversation is re-sent each turn. */
+     conversation is re-sent each turn. The proxy enforces its own cap too. */
   var MAX_HISTORY = 24;
 
-  function baseUrl() {
-    return String(cfg.AI_API_BASE_URL || "").replace(/\/+$/, "");
+  function endpoint() {
+    return String(cfg.AI_API_BASE_URL || "/api").replace(/\/+$/, "") + "/chat";
   }
 
-  function keyFor(company) {
-    return (company && company.ai_api_key) || cfg.AI_API_KEY || "";
+  /* The key is server-side now, so the browser cannot know whether it is set.
+     The proxy answers a clear "not connected yet" if it is missing. */
+  function isConfigured() {
+    return Boolean(endpoint());
   }
 
-  function isConfigured(company) {
-    return !!(baseUrl() && keyFor(company));
+  /**
+   * Asks the proxy whether a DeepSeek key is set. Resolves with
+   * { configured: boolean, reachable: boolean }. Never rejects.
+   */
+  function status() {
+    return fetch(endpoint(), { method: "GET", cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) return { configured: false, reachable: false };
+        return res.json().then(function (d) {
+          return { configured: Boolean(d && d.configured), reachable: true };
+        });
+      })
+      .catch(function () { return { configured: false, reachable: false }; });
   }
 
-  /** Returns an Error when the endpoint or key is missing, otherwise null. */
-  function configGuard(company) {
-    if (!baseUrl()) {
-      return new Error(
-        "The AI endpoint is not configured. Set AI_API_BASE_URL in assets/js/supabase-config.js."
-      );
+  function accessToken() {
+    var auth = global.GenysisAuth;
+    if (!auth || !auth.isConfigured()) {
+      return Promise.reject(new Error("Please sign in to use the assistant."));
     }
-    if (!keyFor(company)) {
-      return new Error(
-        "No API key is set for this company. Genysis IQ needs to add one before the assistant can be used."
-      );
-    }
-    return null;
-  }
-
-  function endpointFor(company) {
-    return baseUrl() + "/v1/ai/chat?API=" + encodeURIComponent(keyFor(company));
-  }
-
-  /** System prompt (from Genysis IQ) + recent turns + what was just typed. */
-  function buildMessages(company, history, message) {
-    var messages = [];
-
-    var prompt = company && company.system_prompt;
-    if (prompt && String(prompt).trim()) {
-      messages.push({ role: "system", content: String(prompt).trim() });
-    }
-
-    (history || []).slice(-MAX_HISTORY).forEach(function (m) {
-      if (m && (m.role === "user" || m.role === "assistant") && m.content) {
-        messages.push({ role: m.role, content: m.content });
-      }
+    return auth.client().auth.getSession().then(function (r) {
+      var token = r && r.data && r.data.session && r.data.session.access_token;
+      if (!token) throw new Error("Your session has expired. Please sign in again.");
+      return token;
     });
+  }
 
-    messages.push({ role: "user", content: message });
-    return messages;
+  function cleanHistory(history) {
+    return (history || []).slice(-MAX_HISTORY).filter(function (m) {
+      return m && (m.role === "user" || m.role === "assistant") && m.content;
+    }).map(function (m) {
+      return { role: m.role, content: m.content };
+    });
+  }
+
+  /** The request body. `company` is only read when testing a draft. */
+  function bodyFor(company, history, message, opts, stream) {
+    var body = {
+      mode: "dashboard",
+      history: cleanHistory(history),
+      message: message,
+      stream: Boolean(stream)
+    };
+    if (opts && opts.draft && company) {
+      body.draft = {
+        systemPrompt: company.system_prompt || "",
+        model: company.ai_model || undefined,
+        apiKey: company.ai_api_key || undefined
+      };
+    }
+    return JSON.stringify(body);
+  }
+
+  function post(token, payload, signal) {
+    return fetch(endpoint(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      signal: signal,
+      body: payload
+    });
   }
 
   /**
@@ -88,40 +112,25 @@
    */
   function send(company, history, message, opts) {
     opts = opts || {};
+    var payload = bodyFor(company, history, message, opts, false);
 
-    var guard = configGuard(company);
-    if (guard) return Promise.reject(guard);
+    return accessToken().then(function (token) {
+      function attempt(n) {
+        return post(token, payload, opts.signal).then(function (res) {
+          return res.text().then(function (text) {
+            if (res.ok) return parseReply(text);
 
-    var url = endpointFor(company);
-    var payload = JSON.stringify({
-      model: (company && company.ai_model) || DEFAULTS.model,
-      messages: buildMessages(company, history, message),
-      max_tokens: DEFAULTS.maxTokens,
-      temperature: DEFAULTS.temperature,
-      reasoning_effort: DEFAULTS.reasoningEffort
-    });
-
-    function attempt(n) {
-      return fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: opts.signal,
-        body: payload
-      }).then(function (res) {
-        return res.text().then(function (text) {
-          if (res.ok) return parseReply(text);
-
-          if (isRetryable(res.status) && n < MAX_ATTEMPTS - 1) {
-            var delay = backoffFor(n, retryAfterHeader(res) || parseRetryDelay(text));
-            if (opts.onRetry) opts.onRetry(n + 1, delay, res.status);
-            return wait(delay).then(function () { return attempt(n + 1); });
-          }
-          throw new Error(friendlyStatus(res.status, text));
+            if (isRetryable(res.status) && n < MAX_ATTEMPTS - 1) {
+              var delay = backoffFor(n, retryAfterHeader(res) || parseRetryDelay(text));
+              if (opts.onRetry) opts.onRetry(n + 1, delay, res.status);
+              return wait(delay).then(function () { return attempt(n + 1); });
+            }
+            throw new Error(friendlyStatus(res.status, text));
+          });
         });
-      });
-    }
-
-    return attempt(0);
+      }
+      return attempt(0);
+    });
   }
 
   /** Shared by send() and the non-streaming fallback in stream(). */
@@ -132,15 +141,14 @@
     } catch (e) {
       throw new Error("The assistant returned a response we could not read.");
     }
-    var choice = data.choices && data.choices[0];
-    var content = choice && choice.message && choice.message.content;
+    // The proxy returns { content, finishReason } - only what gets rendered.
+    var content = data && data.content;
     if (!content || !String(content).trim()) {
       throw new Error("The assistant returned an empty reply. Please try again.");
     }
     return {
       content: String(content).trim(),
-      finishReason: choice.finish_reason,
-      usage: data.usage || null
+      finishReason: data.finishReason || null
     };
   }
 
@@ -148,63 +156,47 @@
    * Same as send(), but streams the reply.
    *
    * The endpoint returns OpenAI-style SSE. Each chunk may carry `delta.content`
-   * (the answer) or `delta.reasoning` (the model thinking out loud) - only the
-   * former is ever surfaced to the client.
+   * (the answer) or `delta.reasoning_content` (the model thinking out loud) -
+   * only the former is ever surfaced to the client.
    *
    * @param {function} onDelta called with (chunkText, fullTextSoFar)
    * @returns {Promise<{content:string}>} resolves with the complete reply
    */
   function stream(company, history, message, onDelta, opts) {
     opts = opts || {};
+    var payload = bodyFor(company, history, message, opts, true);
 
-    var guard = configGuard(company);
-    if (guard) return Promise.reject(guard);
+    return accessToken().then(function (token) {
+      /* A 429 arrives as the HTTP response, before any tokens are streamed, so
+         retrying is safe here - nothing has been shown to the reader yet. Once
+         the body starts flowing we never retry, to avoid duplicating output. */
+      function attempt(n) {
+        return post(token, payload, opts.signal).then(function (res) {
+          if (!res.ok) {
+            return res.text().then(function (text) {
+              if (isRetryable(res.status) && n < MAX_ATTEMPTS - 1) {
+                var delay = backoffFor(n, retryAfterHeader(res) || parseRetryDelay(text));
+                if (opts.onRetry) opts.onRetry(n + 1, delay, res.status);
+                return wait(delay).then(function () { return attempt(n + 1); });
+              }
+              throw new Error(friendlyStatus(res.status, text));
+            });
+          }
 
-    var url = endpointFor(company);
-    var payload = JSON.stringify({
-      model: (company && company.ai_model) || DEFAULTS.model,
-      messages: buildMessages(company, history, message),
-      max_tokens: DEFAULTS.maxTokens,
-      temperature: DEFAULTS.temperature,
-      reasoning_effort: DEFAULTS.reasoningEffort,
-      stream: true
+          // No streaming support in this browser - fall back to a single read.
+          if (!res.body || !res.body.getReader) {
+            return res.text().then(function (t) {
+              var full = collectFromSse(t);
+              if (full) { onDelta(full, full); return { content: full }; }
+              throw new Error("The assistant returned a response we could not read.");
+            });
+          }
+
+          return consume(res.body.getReader(), onDelta);
+        });
+      }
+      return attempt(0);
     });
-
-    /* A 429 arrives as the HTTP response, before any tokens are streamed, so
-       retrying is safe here - nothing has been shown to the reader yet. Once
-       the body starts flowing we never retry, to avoid duplicating output. */
-    function attempt(n) {
-      return fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: opts.signal,
-        body: payload
-      }).then(function (res) {
-        if (!res.ok) {
-          return res.text().then(function (text) {
-            if (isRetryable(res.status) && n < MAX_ATTEMPTS - 1) {
-              var delay = backoffFor(n, retryAfterHeader(res) || parseRetryDelay(text));
-              if (opts.onRetry) opts.onRetry(n + 1, delay, res.status);
-              return wait(delay).then(function () { return attempt(n + 1); });
-            }
-            throw new Error(friendlyStatus(res.status, text));
-          });
-        }
-
-        // No streaming support in this browser - fall back to a single read.
-        if (!res.body || !res.body.getReader) {
-          return res.text().then(function (t) {
-            var full = collectFromSse(t);
-            if (full) { onDelta(full, full); return { content: full }; }
-            throw new Error("The assistant returned a response we could not read.");
-          });
-        }
-
-        return consume(res.body.getReader(), onDelta);
-      });
-    }
-
-    return attempt(0);
   }
 
   function consume(reader, onDelta) {
@@ -237,7 +229,7 @@
             try { data = JSON.parse(body); } catch (e) { return; }
 
             var delta = ((data.choices || [{}])[0] || {}).delta || {};
-            // delta.reasoning is the model's private thinking - never shown.
+            // delta.reasoning_content is the model's private thinking - never shown.
             if (typeof delta.content === "string" && delta.content) {
               full += delta.content;
               onDelta(delta.content, full);
@@ -270,11 +262,12 @@
 
   /* ------------------------------------------------------ rate limiting -- */
 
-  /* The upstream provider enforces a tokens-per-minute budget shared by every
-     client on the account. Under concurrent use one request can be refused
-     while the rest succeed, which looks random to whoever gets unlucky. Its
-     429 body carries a precise hint ("Please try again in 750ms"), so honour
-     that and retry rather than surfacing an error the user has to act on. */
+  /* DeepSeek throttles by concurrency (the limit scales with the account's
+     remaining balance), not by a tokens-per-minute budget shared across all
+     clients the way the old free-tier setup did. Under concurrent use a
+     request can still be refused with 429 while others succeed, and 5xx
+     happen occasionally, so both are retried with backoff and jitter rather
+     than surfaced as an error the user has to act on. */
 
   var MAX_ATTEMPTS = 4;
   var MAX_WAIT_MS = 12000;
@@ -314,12 +307,17 @@
     return status === 429 || status === 502 || status === 503 || status === 504;
   }
 
+  /* The proxy already writes a person-readable message for every failure, so
+     prefer it. The status fallbacks cover the proxy itself being unreachable. */
   function friendlyStatus(status, body) {
-    if (status === 401 || status === 403) {
-      return "The API key for this company was rejected. Genysis IQ needs to check it.";
-    }
+    try {
+      var parsed = JSON.parse(body);
+      if (parsed && parsed.error && parsed.error.message) return parsed.error.message;
+    } catch (e) { /* not JSON - fall through */ }
+
     if (status === 404) {
-      return "The AI endpoint could not be found. Check AI_API_BASE_URL.";
+      return "The assistant service could not be found. If you are running the site " +
+             "locally, start it with `vercel dev` rather than a plain static server.";
     }
     if (status === 429) {
       return "The assistant is handling too many requests right now. Please wait a moment and try again.";
@@ -327,8 +325,7 @@
     if (status >= 500) {
       return "The assistant is temporarily unavailable. Please try again shortly.";
     }
-    var snippet = String(body || "").trim().slice(0, 160);
-    return "The assistant could not answer (error " + status + ")" + (snippet ? ": " + snippet : ".");
+    return "The assistant could not answer (error " + status + ").";
   }
 
   /** First user message, trimmed, makes a reasonable conversation title. */
@@ -340,6 +337,7 @@
 
   global.GenysisChat = {
     isConfigured: isConfigured,
+    status: status,
     send: send,
     stream: stream,
     titleFrom: titleFrom

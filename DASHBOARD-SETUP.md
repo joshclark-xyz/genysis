@@ -57,6 +57,8 @@ Supabase dashboard → **SQL Editor**. Run both files in order:
 4. `supabase/migrations/0004_file_terms.sql`
 5. `supabase/migrations/0005_self_serve_gpt.sql`
 6. `supabase/migrations/0006_upload_permission.sql`
+7. `supabase/migrations/0007_analytics.sql`
+8. `supabase/migrations/0008_switch_ai_deepseek.sql`
 
 It is safe to re-run. It creates:
 
@@ -121,14 +123,73 @@ Walk through:
 
 ## The AI assistant
 
-The dashboard has a working chat, wired to:
+Both the dashboard chat and the website chat widget go through **our own
+proxy**, a Vercel serverless function at `api/chat.js`. The browser never talks
+to DeepSeek and never sees a key.
 
 ```
-POST {AI_API_BASE_URL}/v1/ai/chat?API={key}
+browser  ->  POST /api/chat  ->  api/chat.js  ->  POST https://api.deepseek.com/chat/completions
+             (Supabase token)    (adds the key)     Authorization: Bearer <DEEPSEEK_API_KEY>
 ```
 
-Both values live in `assets/js/supabase-config.js` and are already filled in
-with the test endpoint and key.
+### Set the key in Vercel — nowhere else
+
+Vercel -> this project -> **Settings -> Environment Variables**:
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `DEEPSEEK_API_KEY` | **yes** | Your pay-as-you-go key from <https://platform.deepseek.com/api_keys> |
+| `DEEPSEEK_SITE_API_KEY` | no | A separate key for the public widget, so it can be revoked on its own. Falls back to `DEEPSEEK_API_KEY`. |
+| `ALLOWED_ORIGINS` | no | Comma-separated. Defaults to the genysisiq.com domains, `localhost:3000` and `*.vercel.app` previews. Setting it **replaces** the defaults. |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` | no | Default to this project's public values. |
+
+Tick **Production** and **Preview**, then **redeploy** — Vercel only reads
+environment variables at deploy time, so saving the variable alone does nothing
+until the next deployment.
+
+**Never put the key in `assets/js/supabase-config.js`.** Everything in that
+file is downloaded by every visitor.
+
+### What the proxy enforces
+
+Hiding the key is only half of it. `/api/chat` is a public URL that spends your
+balance, so it also refuses to be used as a free general-purpose AI:
+
+- **The system prompt comes from the server.** Dashboard chats use the
+  company's saved `system_prompt`, loaded with the caller's own Supabase token
+  so row-level security applies. The website widget uses a prompt fixed inside
+  `api/chat.js` that declines off-topic requests.
+- **Unsaved prompts can only be tested by people allowed to write one** — staff,
+  and companies with `can_self_serve_gpt`. Only staff may test a specific key.
+- **Accounts must be active.** Pending and suspended companies are refused.
+- **Forged or expired tokens are rejected by Supabase itself** before DeepSeek
+  is ever called.
+- **Model is allowlisted** (`deepseek-flash`, `deepseek-v4-pro`), and message
+  length, history and reply length are capped per mode.
+- **Rate limiting is best-effort.** It stops a loop hammering one server
+  instance, but Vercel runs several, so it is not a global limit. **Set a
+  spending limit in the DeepSeek console** — that is the real ceiling. A true
+  global limit needs Vercel KV or Upstash.
+- **Origin checking** turns away browsers on other sites. A script can fake the
+  Origin header, so this is a filter, not a lock — the prompt lock and caps are
+  what actually bound the damage.
+
+DeepSeek is **pay-as-you-go** — the balance you top up is the budget. Model ids
+are DeepSeek's own (`deepseek-flash` today).
+
+### Running it locally
+
+`/api` only exists when Vercel runs the site. A plain static server
+(`python3 -m http.server`) serves the pages but **not** the proxy, so the chat
+shows "service could not be found". Use:
+
+```bash
+vercel dev
+```
+
+It serves the site on <http://localhost:3000> with `/api/chat` working. Pull
+your environment variables down first with `vercel env pull .env.local`, and
+keep `.env.local` out of the deployment (it is never committed or uploaded).
 
 ### The system prompt is yours, not theirs
 
@@ -148,7 +209,7 @@ update public.companies
 set status         = 'active',
     assistant_name = 'Acme Ops Assistant',
     system_prompt  = 'You are the operations assistant for Acme Manufacturing. ...',
-    ai_model       = 'openai/gpt-oss-120b'   -- optional, this is the default
+    ai_model       = 'deepseek-flash'   -- optional, this is the default
 where email = 'client@example.com';
 ```
 
@@ -176,21 +237,21 @@ Model output is untrusted text rendered as HTML, so every reply goes through
 DOMPurify before it touches the DOM. Links are forced to `rel="noopener
 noreferrer nofollow"` and only http, https, mailto and tel URLs survive.
 
-The endpoint also streams `delta.reasoning` — the model thinking out loud. That
+The endpoint also streams `delta.reasoning_content` — the model thinking out
+loud. That
 is deliberately discarded and never shown to clients.
 
 ### When people see "too many requests" (429)
 
-The AI provider enforces a **tokens-per-minute budget shared by every client on
-the account** — not one budget each. On the free `on_demand` tier that is
-**8,000 TPM**. One person testing alone never comes close; several people
-chatting at once exhaust it in seconds, and whoever's request lands next is
-refused. That is why it looks random and never happens to you.
+The chat reaches DeepSeek through the proxy on pay-as-you-go credits. There is no
+Groq-style tokens-per-minute budget shared by every client, so the random
+refusals the free Groq tier produced are gone. DeepSeek instead throttles by
+concurrency, and the limit scales with the account's remaining balance — so
+the real protection against 429s is simply keeping the balance topped up. The
+dashboard still absorbs the occasional transient 429 or 5xx automatically:
 
-The dashboard now absorbs most of this automatically:
-
-- A refused request is **retried up to four times**, reading the provider's own
-  hint (*"Please try again in 750ms"*) and waiting exactly that long.
+- A refused request is **retried up to four times**, honouring a `Retry-After`
+  header when one is sent.
 - Waits use **jitter**, so several clients bounced at the same moment do not all
   retry in lockstep and collide again.
 - While retrying the reply area says **"Busy right now — retrying…"** rather
@@ -198,20 +259,18 @@ The dashboard now absorbs most of this automatically:
 - If it still cannot get through, the person's **message is put back in the box**
   instead of being lost.
 
-Measured under 20 concurrent requests: **13/20 succeeded without retry, 16/20
-with it.** Retry smooths contention — it cannot create quota. If 429s are
-regular rather than occasional, one of these is the actual fix:
+A 429 can also come from the proxy's own brake — 40 dashboard messages a
+minute per company, 12 widget messages a minute per visitor — which exists to
+stop a runaway loop from draining the balance.
 
-1. **Raise the provider limit.** The 429 body links straight to the upgrade
-   page. This is the real answer and the only one that scales with your client
-   count.
-2. **Lower `AI_MAX_TOKENS`** in `assets/js/supabase-config.js`. At 8,000 TPM a
-   1024-token cap allows roughly eight full-length replies per minute across
-   *all* clients. Dropping to 500–700 nearly doubles how many conversations
-   fit, at the cost of truncating long answers.
-3. **Give busy companies their own key** via `ai_api_key`, if your provider
-   issues keys with separate quotas. A company on its own key cannot be starved
-   by anyone else's traffic.
+If 429s ever become regular, the levers are:
+
+1. **Top up the DeepSeek balance** — the concurrency limit scales with it.
+2. **Lower `maxTokens` in `LIMITS`** at the top of `api/chat.js` (1024 for the
+   dashboard, 700 for the widget). A smaller cap stretches the balance further,
+   at the cost of truncating long answers. Redeploy after changing it.
+3. **Give busy companies their own key** via `ai_api_key`. A company on its own
+   DeepSeek key draws on its own balance and concurrency.
 
 ### Managing conversations
 
@@ -241,21 +300,17 @@ only ever delete its own conversations.
 - If a turn fails, the user message is rolled out of the context history so a
   failed exchange is not replayed on the next attempt.
 
-### Security note on the API key
+### Per-company keys
 
-`AI_API_KEY` sits in a JavaScript file, so **any signed-in client can read it**
-in their browser's network tab. That is acceptable for the test key. Before
-production, pick one:
+`ai_api_key` on a company row is still honoured — the proxy uses it in place of
+`DEEPSEEK_API_KEY` for that company, which is useful for billing a client's
+usage to their own DeepSeek account.
 
-1. **Per-company keys** — set `ai_api_key` on each company row. RLS means a
-   client can only ever read their own, so one client's key leaking does not
-   expose anyone else's.
-2. **Proxy it** — put a Supabase Edge Function between the dashboard and the AI
-   API, holding the key server-side as a secret. The browser then never sees a
-   key at all. This is the right answer if the key is billable or shared.
-
-Option 2 only changes `assets/js/ai.js` — point `baseUrl()` at the Edge
-Function and drop the `?API=` parameter.
+One caveat worth knowing: that column is readable by the company that owns it
+(row-level security lets a client read their own row). The browser no longer
+needs it, so a follow-up hardening would revoke `ai_api_key` from the
+`authenticated` role and have the proxy read it with a service key instead.
+Most companies should simply leave it blank and use the shared server-side key.
 
 ## Approving companies (admin console)
 
@@ -283,7 +338,7 @@ RLS policies enforce it at the database, not just in the interface.
    without one.
 3. In the editor set:
    - **Assistant name** — what the client sees above each reply
-   - **Model** — defaults to `openai/gpt-oss-120b`
+   - **Model** — defaults to `deepseek-flash`
    - **System prompt** — the instructions that define their GPT. "Insert a
      starter template" gives you a structured skeleton to fill in.
    - **API key** / **customer ID** — optional, per-company overrides
@@ -308,7 +363,7 @@ There is a **Preview** button that runs the draft against the live model so they
 can hear it before committing, and an option to write the instructions by hand
 instead.
 
-They always use the default `openai/gpt-oss-120b`; the model is not theirs to
+They always use the default `deepseek-flash`; the model is not theirs to
 change.
 
 The wizard fires only when **all three** are true — approved, self-serve
@@ -425,18 +480,19 @@ cd cloudflare && npx wrangler deploy
 
 ## Website assistant
 
-`assets/js/site-chat.js` puts a chat widget on the four public pages. It knows
-who Ron and Josh are, the five service lines, the CASPER stages, and the phone
-number, and it is instructed not to invent prices, timelines or guarantees —
-when asked for either it declines and points at the phone.
+`assets/js/site-chat.js` puts a chat widget on every public marketing page. It
+knows who Ron and Josh are, the five service lines, the CASPER stages and the
+phone number, and it is instructed not to invent prices, timelines or
+guarantees, and to decline anything unrelated to Genysis IQ.
 
-Edit the knowledge in `SYSTEM_PROMPT` at the top of that file. It is not on the
-dashboard or login pages.
+**Edit its knowledge in `SITE_SYSTEM_PROMPT` at the top of `api/chat.js`** — not
+in `site-chat.js`. The prompt moved server-side so a visitor cannot read it or
+swap in their own. Redeploy for a change to take effect.
 
-⚠️ **The API key in that file is served to every visitor.** A static page has
-nowhere to hide it. That is fine for a test key; before it carries a billable
-one, put a Worker in front of the AI endpoint the way `cloudflare/worker.js`
-does for files, and point `CFG.base` at the Worker instead.
+The widget holds no key. It only appears when the proxy reports
+`DEEPSEEK_API_KEY` is set; otherwise it stays hidden and the page falls back to
+the phone number and contact form. Set `DEEPSEEK_SITE_API_KEY` if you want the
+widget on its own revocable key.
 
 ## Session security
 
