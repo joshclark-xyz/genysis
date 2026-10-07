@@ -102,7 +102,7 @@ const SITE_SYSTEM_PROMPT = [
   "  prices, timelines, guarantees or case studies. Genysis IQ has not",
   "  published pricing - if asked, say it depends on scope and point them to a",
   "  conversation.",
-  "- When someone is ready to talk, give them the phone number 689.388.7353",
+  "- When someone is ready to talk, give them the phone number 407.588.7825",
   "  (answered 24 hours a day, and it can book appointments) or the contact page.",
   "- Only discuss Genysis IQ and its services. If asked for anything unrelated -",
   "  writing, coding, general knowledge - politely decline and redirect to how",

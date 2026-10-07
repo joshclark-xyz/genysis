@@ -24,8 +24,8 @@
 
   var CFG = {
     endpoint: String(gcfg.AI_API_BASE_URL || "/api").replace(/\/+$/, "") + "/chat",
-    phone: "689.388.7353",
-    phoneHref: "tel:+16893887353",
+    phone: "407.588.7825",
+    phoneHref: "tel:+14075887825",
     email: "info@genysisiq.com"
   };
 
@@ -60,8 +60,8 @@
     out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
     out = out.replace(/(^|\s)\*([^*\n]+)\*/g, "$1<em>$2</em>");
     // Phone numbers and the email become tappable.
-    out = out.replace(/689\.388\.7353/g,
-      '<a href="' + CFG.phoneHref + '">689.388.7353</a>');
+    out = out.replace(/407\.588\.7825/g,
+      '<a href="' + CFG.phoneHref + '">407.588.7825</a>');
     out = out.replace(/info@genysisiq\.com/g,
       '<a href="mailto:info@genysisiq.com">info@genysisiq.com</a>');
     out = out.replace(/\n/g, "<br>");

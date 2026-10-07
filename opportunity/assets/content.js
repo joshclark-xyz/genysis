@@ -24,8 +24,8 @@ window.GIQ = (function () {
     company: "Genysis IQ",
     tagline: "Where Intelligent Business Scaling Begins.",
     email: "info@genysisiq.com",
-    phone: "689.388.7353",
-    phoneHref: "tel:+16893887353",
+    phone: "407.588.7825",
+    phoneHref: "tel:+14075887825",
     location: "Orlando, Florida",
     mainSite: "../index.html"
   };

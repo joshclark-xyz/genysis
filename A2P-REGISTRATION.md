@@ -75,14 +75,14 @@ for help. Consent is not a condition of purchase. See our Privacy Policy and Ter
 Service." The label links to both policies. We store the mobile number, the date, and
 the exact wording agreed to.
 
-2) VERBAL - inbound calls to 689-388-7353
+2) VERBAL - inbound calls to 407-588-7825
 Our automated assistant answers, identifies itself as automated, and asks, verbatim:
 "Would you like me to text you a summary of this call at this number? Message
 frequency varies, and message and data rates may apply. You can reply STOP at any
 time to opt out. Is that okay?" A message is sent only on an affirmative answer. The
 call recording and timestamp are retained as the record of consent.
 
-3) INBOUND TEXT - the user texts 689-388-7353 first, or texts START, YES, JOIN or
+3) INBOUND TEXT - the user texts 407-588-7825 first, or texts START, YES, JOIN or
 OPTIN to that number. Initiating the conversation is the consent.
 
 Every path receives the confirmation message before any other message. Numbers are
@@ -125,7 +125,7 @@ Yours read `Reply STOP to unsubscribe. Msg&Data Rates May Apply.` A HELP reply m
 identify the brand and give a way to reach a human. Use:
 
 ```
-Genysis IQ: For help, email info@genysisiq.com or call 689.388.7353. Msg frequency varies. Msg & data rates may apply. Reply STOP to unsubscribe.
+Genysis IQ: For help, email info@genysisiq.com or call 407.588.7825. Msg frequency varies. Msg & data rates may apply. Reply STOP to unsubscribe.
 ```
 
 ### Sample messages
@@ -165,7 +165,7 @@ domain — `genysisiq.com/s/abc123` — which is what the sample above uses. You
 need a short-link route on your site that maps a code to the call summary.
 
 **2. Make the verbal script match this document word for word.** If a reviewer calls
-689.388.7353 to check, and the assistant does not disclose frequency, rates and STOP
+407.588.7825 to check, and the assistant does not disclose frequency, rates and STOP
 before asking permission, the campaign fails on the spot. Update the assistant's
 prompt before resubmitting. The script is on `/messaging.html` so the two cannot
 drift apart.
